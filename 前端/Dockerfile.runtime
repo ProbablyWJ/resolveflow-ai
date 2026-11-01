@@ -1,0 +1,12 @@
+FROM nginx:alpine
+
+# 本地交付镜像：使用已通过 npm test 与 npm run build 验证的 dist 产物。
+# 需要从源码完全重建时，仍使用同目录的多阶段 Dockerfile。
+COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+COPY dist /usr/share/nginx/html
+COPY docker/entrypoint.sh /entrypoint.sh
+
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 80
+ENTRYPOINT ["/entrypoint.sh"]

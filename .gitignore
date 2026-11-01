@@ -1,0 +1,43 @@
+# Secrets and local configuration
+**/.env
+**/.env.*
+!**/.env.example
+**/*.pem
+**/*.key
+
+# Dependencies and build output
+**/node_modules/
+**/dist/
+**/build/
+**/*.egg-info/
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.venv/
+**/venv/
+
+# Runtime data
+后端/data/
+后端/logs/
+**/*.sqlite3
+**/*.log
+
+# IDE and OS files
+**/.idea/
+**/.vscode/
+**/.DS_Store
+**/*.swp
+**/*.swo
+**/*~
+**/*.bak
+
+# Local reference material retained for learning, not part of the public product
+后端/wiki/
+后端/2026.*说明.md
+后端/README.md
+后端/build-image.sh
+后端/run-image.sh
+后端/docker-deploy.sh
+后端/config/nginx/nginx.conf

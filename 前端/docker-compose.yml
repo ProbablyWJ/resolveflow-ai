@@ -1,0 +1,4 @@
+# 完整部署已统一到 ../后端/docker-compose.yml。
+# 请在“后端”目录执行：docker compose up -d --build
+name: resolveflow-frontend-compat
+services: {}

@@ -1,0 +1,6 @@
+# Docker Hub 构建镜像暂时不可用时的本地交付备选方案。
+# 使用前先在 ../前端 执行 npm test && npm run build。
+services:
+  frontend:
+    build:
+      dockerfile: Dockerfile.runtime

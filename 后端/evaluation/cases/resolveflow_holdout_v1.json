@@ -1,0 +1,294 @@
+{
+  "suite_version": "resolveflow-aftersales-holdout-v1.0",
+  "intent_cases": [
+    {"case_id":"holdout_intent_device_fault_01","message":"右边耳塞放回盒里也不进电","expected_intent":"device_fault","tags":["holdout","colloquial"]},
+    {"case_id":"holdout_intent_device_fault_02","message":"扫地机转两下就停，屏幕报 E301","expected_intent":"device_fault","tags":["holdout","cross_product"]},
+    {"case_id":"holdout_intent_device_fault_03","message":"摄像头一直离线，重启以后还是连不上","expected_intent":"device_fault","tags":["holdout","cross_product"]},
+    {"case_id":"holdout_intent_device_fault_04","message":"耳机显示 E201，充电灯一直闪","expected_intent":"device_fault","tags":["holdout","fault_code"]},
+    {"case_id":"holdout_intent_device_fault_05","message":"声音总是断断续续，我现在只想先排查","expected_intent":"device_fault","tags":["holdout","negative_constraint"]},
+    {"case_id":"holdout_intent_device_fault_06","message":"盒子明明有电，两只耳机却搜不到蓝牙","expected_intent":"device_fault","tags":["holdout","paraphrase"]},
+    {"case_id":"holdout_intent_device_fault_07","message":"设备按开机键完全没反应","expected_intent":"device_fault","tags":["holdout","short_query"]},
+    {"case_id":"holdout_intent_device_fault_08","message":"滚刷卡住了，清理完还是提示故障","expected_intent":"device_fault","tags":["holdout","cross_product"]},
+    {"case_id":"holdout_intent_device_fault_09","message":"右耳的麦克风突然收不到声音","expected_intent":"device_fault","tags":["holdout","symptom"]},
+    {"case_id":"holdout_intent_device_fault_10","message":"充了一整晚电量还是零","expected_intent":"device_fault","tags":["holdout","colloquial"]},
+
+    {"case_id":"holdout_intent_warranty_01","message":"这个产品正常保几年","expected_intent":"warranty_inquiry","tags":["holdout","policy"]},
+    {"case_id":"holdout_intent_warranty_02","message":"帮我看看 FCS-CN-C30003 的保修到哪天","expected_intent":"warranty_inquiry","tags":["holdout","serial_number"]},
+    {"case_id":"holdout_intent_warranty_03","message":"发票找不到了还能查保修吗","expected_intent":"warranty_inquiry","tags":["holdout","missing_field"]},
+    {"case_id":"holdout_intent_warranty_04","message":"第三方店铺买的也享受官方质保吗","expected_intent":"warranty_inquiry","tags":["holdout","policy_boundary"]},
+    {"case_id":"holdout_intent_warranty_05","message":"我去年双十一买的，现在坏了还保不保","expected_intent":"warranty_inquiry","tags":["holdout","colloquial"]},
+    {"case_id":"holdout_intent_warranty_06","message":"换过一次货以后质保期重新算吗","expected_intent":"warranty_inquiry","tags":["holdout","policy"]},
+    {"case_id":"holdout_intent_warranty_07","message":"订单号忘了，能不能用序列号核验保修","expected_intent":"warranty_inquiry","tags":["holdout","missing_field"]},
+    {"case_id":"holdout_intent_warranty_08","message":"我只查一下是否在保，不需要提交维修","expected_intent":"warranty_inquiry","tags":["holdout","negative_constraint"]},
+    {"case_id":"holdout_intent_warranty_09","message":"激活日期和购买日期哪个算质保起点","expected_intent":"warranty_inquiry","tags":["holdout","policy"]},
+    {"case_id":"holdout_intent_warranty_10","message":"这个序列号是不是已经过质保了","expected_intent":"warranty_inquiry","tags":["holdout","paraphrase"]},
+
+    {"case_id":"holdout_intent_repair_01","message":"能帮我安排寄回去检修吗","expected_intent":"repair_request","tags":["holdout","colloquial"]},
+    {"case_id":"holdout_intent_repair_02","message":"我想申请维修，不考虑换新","expected_intent":"repair_request","tags":["holdout","boundary"]},
+    {"case_id":"holdout_intent_repair_03","message":"排查步骤全做完了，还是麻烦送修吧","expected_intent":"repair_request","tags":["holdout","diagnosed"]},
+    {"case_id":"holdout_intent_repair_04","message":"摄像头无法通电，在哪里报修","expected_intent":"repair_request","tags":["holdout","cross_product"]},
+    {"case_id":"holdout_intent_repair_05","message":"维修单要准备购买凭证和序列号吗","expected_intent":"repair_request","tags":["holdout","procedure"]},
+    {"case_id":"holdout_intent_repair_06","message":"这个故障可以预约检测维修吗","expected_intent":"repair_request","tags":["holdout","service_request"]},
+    {"case_id":"holdout_intent_repair_07","message":"想走官方售后修理流程","expected_intent":"repair_request","tags":["holdout","procedure"]},
+    {"case_id":"holdout_intent_repair_08","message":"设备还能开机，但我想寄修检查一下","expected_intent":"repair_request","tags":["holdout","boundary"]},
+    {"case_id":"holdout_intent_repair_09","message":"不要给我换货，帮我建立维修申请","expected_intent":"repair_request","tags":["holdout","negative_constraint"]},
+    {"case_id":"holdout_intent_repair_10","message":"滚刷故障反复出现，我要送去维修","expected_intent":"repair_request","tags":["holdout","cross_product"]},
+
+    {"case_id":"holdout_intent_exchange_01","message":"刚到手就不能用，我想换一台新的","expected_intent":"exchange_request","tags":["holdout","early_failure"]},
+    {"case_id":"holdout_intent_exchange_02","message":"修过两回还是同一个毛病，申请换机","expected_intent":"exchange_request","tags":["holdout","repeat_failure"]},
+    {"case_id":"holdout_intent_exchange_03","message":"能先查查我够不够换货条件吗","expected_intent":"exchange_request","tags":["holdout","eligibility"]},
+    {"case_id":"holdout_intent_exchange_04","message":"这次不想维修了，想直接更换设备","expected_intent":"exchange_request","tags":["holdout","boundary"]},
+    {"case_id":"holdout_intent_exchange_05","message":"订单 RF202609120003 可以走换新吗","expected_intent":"exchange_request","tags":["holdout","order"]},
+    {"case_id":"holdout_intent_exchange_06","message":"到货七天内发现故障怎么换货","expected_intent":"exchange_request","tags":["holdout","policy"]},
+    {"case_id":"holdout_intent_exchange_07","message":"我只想了解换机规则，先不要建服务单","expected_intent":"exchange_request","tags":["holdout","negative_constraint"]},
+    {"case_id":"holdout_intent_exchange_08","message":"检测后确认坏了，下一步怎么换新","expected_intent":"exchange_request","tags":["holdout","diagnosed"]},
+    {"case_id":"holdout_intent_exchange_09","message":"可以把有问题的这台替换掉吗","expected_intent":"exchange_request","tags":["holdout","paraphrase"]},
+    {"case_id":"holdout_intent_exchange_10","message":"我要申请同型号置换","expected_intent":"exchange_request","tags":["holdout","short_query"]},
+
+    {"case_id":"holdout_intent_parts_01","message":"左边耳帽掉了，能补一个 M 号的吗","expected_intent":"parts_request","tags":["holdout","size"]},
+    {"case_id":"holdout_intent_parts_02","message":"充电盒单独可以买或者补配吗","expected_intent":"parts_request","tags":["holdout","accessory"]},
+    {"case_id":"holdout_intent_parts_03","message":"吸尘器的过滤网用完了，怎么申请配件","expected_intent":"parts_request","tags":["holdout","cross_product"]},
+    {"case_id":"holdout_intent_parts_04","message":"只剩左耳了，右耳能单独补吗","expected_intent":"parts_request","tags":["holdout","single_unit"]},
+    {"case_id":"holdout_intent_parts_05","message":"原装数据线丢了，售后能补发吗","expected_intent":"parts_request","tags":["holdout","accessory"]},
+    {"case_id":"holdout_intent_parts_06","message":"想查一下配件申请要什么资料","expected_intent":"parts_request","tags":["holdout","procedure"]},
+    {"case_id":"holdout_intent_parts_07","message":"摄像头底座坏了，能只换底座吗","expected_intent":"parts_request","tags":["holdout","cross_product"]},
+    {"case_id":"holdout_intent_parts_08","message":"我不要整机维修，只需要一个滚刷","expected_intent":"parts_request","tags":["holdout","negative_constraint"]},
+    {"case_id":"holdout_intent_parts_09","message":"耳机充电盒不见了，想重新配一个","expected_intent":"parts_request","tags":["holdout","colloquial"]},
+    {"case_id":"holdout_intent_parts_10","message":"有没有原厂替换配件的申请入口","expected_intent":"parts_request","tags":["holdout","procedure"]},
+
+    {"case_id":"holdout_intent_ticket_01","message":"服务单 RF-T20261020-001 现在到哪一步了","expected_intent":"ticket_status","tags":["holdout","ticket_id"]},
+    {"case_id":"holdout_intent_ticket_02","message":"我寄出的设备售后有没有收到","expected_intent":"ticket_status","tags":["holdout","shipment"]},
+    {"case_id":"holdout_intent_ticket_03","message":"昨天提交的维修申请有进展吗","expected_intent":"ticket_status","tags":["holdout","colloquial"]},
+    {"case_id":"holdout_intent_ticket_04","message":"帮我查现有工单，别再创建新的","expected_intent":"ticket_status","tags":["holdout","negative_constraint"]},
+    {"case_id":"holdout_intent_ticket_05","message":"售后单一直没变化是什么情况","expected_intent":"ticket_status","tags":["holdout","delay"]},
+    {"case_id":"holdout_intent_ticket_06","message":"维修流程目前进行到哪个节点","expected_intent":"ticket_status","tags":["holdout","paraphrase"]},
+    {"case_id":"holdout_intent_ticket_07","message":"我想看一下服务单的最新状态","expected_intent":"ticket_status","tags":["holdout","standard"]},
+    {"case_id":"holdout_intent_ticket_08","message":"设备寄出以后多久能在工单里看到更新","expected_intent":"ticket_status","tags":["holdout","shipment"]},
+    {"case_id":"holdout_intent_ticket_09","message":"查询一下我的换货申请处理进度","expected_intent":"ticket_status","tags":["holdout","exchange"]},
+    {"case_id":"holdout_intent_ticket_10","message":"售后编号对应的下一步是什么","expected_intent":"ticket_status","tags":["holdout","next_action"]},
+
+    {"case_id":"holdout_intent_complaint_01","message":"同一个故障处理三次还没好，我要投诉","expected_intent":"quality_complaint","tags":["holdout","repeat_service"]},
+    {"case_id":"holdout_intent_complaint_02","message":"新机一周就坏了，这个品控有问题","expected_intent":"quality_complaint","tags":["holdout","early_failure"]},
+    {"case_id":"holdout_intent_complaint_03","message":"请把频繁断连登记成质量反馈","expected_intent":"quality_complaint","tags":["holdout","quality"]},
+    {"case_id":"holdout_intent_complaint_04","message":"这一批设备是不是有通病，我要正式反馈","expected_intent":"quality_complaint","tags":["holdout","batch_issue"]},
+    {"case_id":"holdout_intent_complaint_05","message":"售后反复让我重置但问题没解决，我很不满意","expected_intent":"quality_complaint","tags":["holdout","service_quality"]},
+    {"case_id":"holdout_intent_complaint_06","message":"产品连续出故障，请记录质量投诉","expected_intent":"quality_complaint","tags":["holdout","standard"]},
+    {"case_id":"holdout_intent_complaint_07","message":"维修回来两天又坏，我要反馈这个问题","expected_intent":"quality_complaint","tags":["holdout","repeat_failure"]},
+    {"case_id":"holdout_intent_complaint_08","message":"我认为这是设计缺陷，不是普通使用问题","expected_intent":"quality_complaint","tags":["holdout","boundary"]},
+    {"case_id":"holdout_intent_complaint_09","message":"请把本次异常纳入产品质量记录","expected_intent":"quality_complaint","tags":["holdout","formal"]},
+    {"case_id":"holdout_intent_complaint_10","message":"这么多人都遇到故障，我要投诉产品质量","expected_intent":"quality_complaint","tags":["holdout","batch_issue"]},
+
+    {"case_id":"holdout_intent_human_01","message":"麻烦让真人客服接着处理","expected_intent":"human_handoff","tags":["holdout","colloquial"]},
+    {"case_id":"holdout_intent_human_02","message":"我不想继续跟机器人说了","expected_intent":"human_handoff","tags":["holdout","negative_constraint"]},
+    {"case_id":"holdout_intent_human_03","message":"请升级到人工售后专员","expected_intent":"human_handoff","tags":["holdout","escalation"]},
+    {"case_id":"holdout_intent_human_04","message":"能不能帮我接人工服务","expected_intent":"human_handoff","tags":["holdout","question"]},
+    {"case_id":"holdout_intent_human_05","message":"这个情况需要工作人员接手","expected_intent":"human_handoff","tags":["holdout","handoff"]},
+    {"case_id":"holdout_intent_human_06","message":"停止自动回复，转给客服人员","expected_intent":"human_handoff","tags":["holdout","explicit"]},
+    {"case_id":"holdout_intent_human_07","message":"我要和售后本人沟通","expected_intent":"human_handoff","tags":["holdout","colloquial"]},
+    {"case_id":"holdout_intent_human_08","message":"请把当前信息交接给人工","expected_intent":"human_handoff","tags":["holdout","handoff"]},
+    {"case_id":"holdout_intent_human_09","message":"帮我找一个可以处理例外情况的人","expected_intent":"human_handoff","tags":["holdout","exception"]},
+    {"case_id":"holdout_intent_human_10","message":"直接人工，谢谢","expected_intent":"human_handoff","tags":["holdout","short_query"]},
+
+    {"case_id":"holdout_intent_aftersales_01","message":"我买的东西有点异常，不知道该怎么处理","expected_intent":"aftersales","tags":["holdout","ambiguous"]},
+    {"case_id":"holdout_intent_aftersales_02","message":"想问一下你们售后一般怎么走","expected_intent":"aftersales","tags":["holdout","procedure"]},
+    {"case_id":"holdout_intent_aftersales_03","message":"我不确定这是维修、换货还是配件问题","expected_intent":"aftersales","tags":["holdout","needs_clarification"]},
+    {"case_id":"holdout_intent_aftersales_04","message":"设备用着不太正常，先帮我看看应该找谁","expected_intent":"aftersales","tags":["holdout","ambiguous"]},
+    {"case_id":"holdout_intent_aftersales_05","message":"咨询一个购买后的服务问题","expected_intent":"aftersales","tags":["holdout","consultation"]},
+    {"case_id":"holdout_intent_aftersales_06","message":"我需要售后帮助，但还没决定怎么处理","expected_intent":"aftersales","tags":["holdout","ambiguous"]},
+    {"case_id":"holdout_intent_aftersales_07","message":"先帮我判断这个情况属于哪种售后","expected_intent":"aftersales","tags":["holdout","classification"]},
+    {"case_id":"holdout_intent_aftersales_08","message":"产品出了点状况，想了解后续服务","expected_intent":"aftersales","tags":["holdout","consultation"]},
+    {"case_id":"holdout_intent_aftersales_09","message":"不知道该报修还是申请其他服务","expected_intent":"aftersales","tags":["holdout","needs_clarification"]},
+    {"case_id":"holdout_intent_aftersales_10","message":"有个售后事项想先咨询一下","expected_intent":"aftersales","tags":["holdout","standard"]},
+
+    {"case_id":"holdout_intent_greeting_01","message":"下午好","expected_intent":"greeting","tags":["holdout","time"]},
+    {"case_id":"holdout_intent_greeting_02","message":"哈喽","expected_intent":"greeting","tags":["holdout","colloquial"]},
+    {"case_id":"holdout_intent_greeting_03","message":"有人在线吗","expected_intent":"greeting","tags":["holdout","question"]},
+    {"case_id":"holdout_intent_greeting_04","message":"hi there","expected_intent":"greeting","tags":["holdout","english"]},
+    {"case_id":"holdout_intent_greeting_05","message":"晚上好呀","expected_intent":"greeting","tags":["holdout","time"]},
+    {"case_id":"holdout_intent_greeting_06","message":"你好你好","expected_intent":"greeting","tags":["holdout","repetition"]},
+    {"case_id":"holdout_intent_greeting_07","message":"请问在不在","expected_intent":"greeting","tags":["holdout","colloquial"]},
+    {"case_id":"holdout_intent_greeting_08","message":"good morning","expected_intent":"greeting","tags":["holdout","english"]},
+    {"case_id":"holdout_intent_greeting_09","message":"嗨，打扰一下","expected_intent":"greeting","tags":["holdout","soft_opening"]},
+    {"case_id":"holdout_intent_greeting_10","message":"您好","expected_intent":"greeting","tags":["holdout","formal"]}
+  ],
+  "dialog_cases": [
+    {
+      "case_id":"holdout_dialog_diagnosis_e201","tags":["holdout","tool_calling","diagnosis"],
+      "question":"FlowBuds Pro 序列号 FBP-CN-A10001，充电失败并提示 E201。",
+      "expected_agent":"diagnostic","expected_primary_agent":"diagnostic","expected_intent":"device_fault",
+      "required_tools":["lookup_device","lookup_fault_code","run_device_diagnostic"],"forbidden_tools":["create_service_ticket"],
+      "expected_tool_sequence":["lookup_device","lookup_fault_code","run_device_diagnostic"],"tool_sequence_mode":"in_order",
+      "expected_tool_inputs":[{"tool_name":"lookup_device","input":{"serial_number":"FBP-CN-A10001"}},{"tool_name":"lookup_fault_code","input":{"fault_code":"E201"}}],
+      "expected_all_tool_calls_success":true,"expected_escalated":false,
+      "required_state_facts":{"device_verified":true,"diagnosis_status":"completed"},
+      "required_response_terms":["E201"],"max_response_chars":1200,
+      "reference_answer":"核验设备和 E201，解释充电触点连接异常，给出不超过三项低风险操作与停止条件。",
+      "evidence":"E201 表示充电触点未稳定连接；可断电检查触点、更换合规线材并观察指示灯。"
+    },
+    {
+      "case_id":"holdout_dialog_diagnosis_e301","tags":["holdout","tool_calling","cross_product"],
+      "question":"FCS-CN-C30003 的 FlowClean S1 报 E301，滚刷不转。",
+      "expected_agent":"diagnostic","expected_primary_agent":"diagnostic","expected_intent":"device_fault",
+      "required_tools":["lookup_device","lookup_fault_code","run_device_diagnostic"],"forbidden_tools":["create_service_ticket"],
+      "expected_tool_sequence":["lookup_device","lookup_fault_code","run_device_diagnostic"],"tool_sequence_mode":"in_order",
+      "expected_tool_inputs":[{"tool_name":"lookup_device","input":{"serial_number":"FCS-CN-C30003"}},{"tool_name":"lookup_fault_code","input":{"fault_code":"E301"}}],
+      "expected_all_tool_calls_success":true,"expected_escalated":false,
+      "required_state_facts":{"device_verified":true,"diagnosis_status":"completed"},
+      "required_response_terms":["E301"],"max_response_chars":1200,
+      "reference_answer":"核验设备与 E301，断电后清理可见缠绕物并运行自检，出现烧焦味或无法断电时停止。",
+      "evidence":"E301 表示滚刷阻力超过安全阈值。"
+    },
+    {
+      "case_id":"holdout_dialog_warranty_cross_product","tags":["holdout","business_tool","grounding"],
+      "question":"订单 RF202609120003 对应的 FCS-CN-C30003 质保到什么时候？",
+      "expected_agent":"resolution","expected_intent":"warranty_inquiry",
+      "required_tools":["lookup_order","check_warranty"],"forbidden_tools":["create_service_ticket"],
+      "expected_escalated":false,"required_state_facts":{"order_verified":true,"warranty_status":"in_warranty"},
+      "required_response_terms":["2027-09-12"],"max_response_chars":900,
+      "reference_answer":"依据演示订单核验该设备在保至 2027-09-12，并说明最终服务资格仍按故障与政策审核。",
+      "evidence":"RF202609120003 与 FCS-CN-C30003 匹配，保修截止 2027-09-12。"
+    },
+    {
+      "case_id":"holdout_dialog_warranty_expired_paraphrase","tags":["holdout","business_tool","boundary"],
+      "question":"帮我确认 RF202510010002 这单的 FCM-CN-B20002 现在是不是已经不在保了。",
+      "expected_agent":"resolution","expected_intent":"warranty_inquiry",
+      "required_tools":["lookup_order","check_warranty"],"forbidden_tools":["create_service_ticket"],
+      "required_state_facts":{"warranty_status":"out_of_warranty"},"required_response_terms":["2026-10-01"],"max_response_chars":900,
+      "reference_answer":"核验保修截止 2026-10-01，当前已过保，并说明可继续咨询付费维修。",
+      "evidence":"演示订单 RF202510010002 的保修截止日为 2026-10-01。"
+    },
+    {
+      "case_id":"holdout_dialog_ticket_paraphrase","tags":["holdout","business_tool","conciseness"],
+      "question":"RF-T20261020-001 这张售后单下一步需要我做什么？",
+      "expected_agent":"resolution","expected_intent":"ticket_status","required_tools":["get_service_ticket"],
+      "expected_plan_status":"completed","required_response_terms":["等待寄出设备","等待用户寄出设备"],
+      "forbidden_response_terms":["awaiting_shipment"],"max_response_chars":500,
+      "reference_answer":"把内部状态转成用户语言，说明当前等待用户寄出设备。",
+      "evidence":"该演示工单状态为 awaiting_shipment，next_action 为等待用户寄出设备。"
+    },
+    {
+      "case_id":"holdout_dialog_safety_leak","tags":["holdout","safety","handoff"],
+      "question":"耳机盒在漏液而且很烫，我是不是还能继续插着电？",
+      "expected_agent":"escalation","expected_primary_agent":"escalation","expected_intent":"device_fault","expected_escalated":true,
+      "expected_tool_sequence":[],"tool_sequence_mode":"strict","expected_question_group_count":0,
+      "forbidden_tools":["run_device_diagnostic","create_service_ticket"],"expected_plan_status":"handoff_required",
+      "expected_handoff_reason":"device_safety_risk","required_response_terms":["停止使用和充电","人工"],
+      "forbidden_response_terms":["意图=","CRITICAL","已记录信息：{"],"max_response_chars":350,
+      "reference_answer":"立即停止使用和充电，远离热源与可燃物，不拆机，并停止普通自动排障。",
+      "evidence":"漏液与异常发热是明确的设备安全风险。"
+    },
+    {
+      "case_id":"holdout_dialog_safety_negation_e201","tags":["holdout","negation","diagnosis"],
+      "question":"FBP-CN-A10001 没有发热、冒烟或漏液，只是充不上电并报 E201。",
+      "expected_agent":"diagnostic","expected_primary_agent":"diagnostic","expected_intent":"device_fault","expected_escalated":false,
+      "required_tools":["lookup_device","lookup_fault_code","run_device_diagnostic"],
+      "forbidden_tools":["create_service_ticket"],"required_state_facts":{"diagnosis_status":"completed"},
+      "required_response_terms":["E201"],"forbidden_response_terms":["自动处理已停止"],"max_response_chars":1200,
+      "reference_answer":"识别风险项均被否定，继续执行 E201 的低风险诊断，不误升级人工。",
+      "evidence":"否定作用域覆盖发热、冒烟和漏液，真实症状是充电失败。"
+    },
+    {
+      "case_id":"holdout_dialog_human_paraphrase","tags":["holdout","handoff","privacy"],
+      "question":"先别让系统继续判断了，请把已有信息交给真人客服。",
+      "expected_agent":"escalation","expected_intent":"human_handoff","expected_escalated":true,
+      "expected_plan_status":"handoff_required","expected_handoff_reason":"user_requested_human",
+      "required_response_terms":["人工"],"forbidden_response_terms":["已转人工","CRITICAL","意图="],"max_response_chars":300,
+      "reference_answer":"停止自动处理，说明已整理交接信息，但不虚构已连接真实人工队列。",
+      "evidence":"用户明确要求真人接手。"
+    },
+    {
+      "case_id":"holdout_dialog_progressive_earbuds","tags":["holdout","progressive_clarification","multi_turn","vague_input"],
+      "turns":["我的蓝牙耳塞好像出毛病了","都没有","充不进去电"],
+      "turn_expectations":[
+        {"expected_agent":"intake","expected_primary_agent":"intake","expected_intent":"device_fault","expected_tool_sequence":[],"tool_sequence_mode":"strict","expected_question_group_count":1,"expected_question_group":{"stage":"safety_check","type":"single_select","option_values":["有","没有","不确定"]},"expected_support_flow_stage":"safety_check","forbidden_tools":["lookup_device","lookup_fault_code","run_device_diagnostic","create_service_ticket"],"required_response_terms":["有","没有","不确定"],"max_response_chars":260,"reference_answer":"首轮只做安全筛查。","evidence":"缺少安全状态、故障表现和设备身份。"},
+        {"expected_agent":"intake","expected_primary_agent":"intake","expected_intent":"device_fault","expected_tool_sequence":[],"tool_sequence_mode":"strict","expected_question_group_count":1,"expected_question_group":{"stage":"symptom","type":"multi_select","allow_text":true},"expected_support_flow_stage":"symptom","forbidden_tools":["lookup_device","lookup_fault_code","run_device_diagnostic","create_service_ticket"],"required_response_terms":["具体表现"],"max_response_chars":260,"reference_answer":"安全异常均被否定后，只询问具体故障表现。","evidence":"渐进式澄清每轮只推进一组问题。"},
+        {"expected_agent":"intake","expected_primary_agent":"intake","expected_intent":"device_fault","expected_tool_sequence":[],"tool_sequence_mode":"strict","expected_question_group_count":1,"expected_question_group":{"stage":"device_identity","type":"text","option_values":[]},"expected_support_flow_stage":"device_identity","forbidden_tools":["lookup_device","lookup_fault_code","run_device_diagnostic","create_service_ticket"],"required_response_terms":["型号"],"max_response_chars":260,"reference_answer":"保存充电失败表现，本轮只补设备型号。","evidence":"仍缺设备身份，不应提前调用诊断工具。"}
+      ],
+      "expected_agent":"intake","expected_primary_agent":"intake","expected_intent":"device_fault",
+      "forbidden_tools":["lookup_device","lookup_fault_code","run_device_diagnostic","create_service_ticket"],
+      "expected_support_flow_stage":"device_identity","max_response_chars":260,
+      "reference_answer":"依次完成安全、症状和设备身份澄清，信息就绪前不诊断。",
+      "evidence":"模糊设备故障需要渐进式信息门控。"
+    },
+    {
+      "case_id":"holdout_dialog_progressive_laptop","tags":["holdout","progressive_clarification","cross_device"],
+      "question":"笔记本突然不能用了",
+      "expected_agent":"intake","expected_primary_agent":"intake","expected_intent":"device_fault",
+      "expected_tool_sequence":[],"tool_sequence_mode":"strict","expected_question_group_count":1,
+      "expected_question_group":{"stage":"safety_check","type":"single_select","option_values":["有","没有","不确定"]},
+      "expected_support_flow_stage":"safety_check","forbidden_tools":["lookup_device","lookup_fault_code","run_device_diagnostic","create_service_ticket"],
+      "required_response_terms":["有","没有","不确定"],"forbidden_response_terms":["序列号","故障码"],"max_response_chars":260,
+      "reference_answer":"无论是否为演示产品，信息不足时先做通用安全筛查，不直接生成诊断报告。",
+      "evidence":"信息完整度门控应跨设备类型生效。"
+    },
+    {
+      "case_id":"holdout_dialog_progressive_unknown","tags":["holdout","progressive_clarification","unknown_device"],
+      "question":"刚才还好好的，现在完全没反应了",
+      "expected_agent":"intake","expected_primary_agent":"intake",
+      "expected_tool_sequence":[],"tool_sequence_mode":"strict","expected_question_group_count":1,
+      "expected_question_group":{"stage":"safety_check","type":"single_select","option_values":["有","没有","不确定"]},
+      "expected_support_flow_stage":"safety_check","forbidden_tools":["lookup_device","lookup_fault_code","run_device_diagnostic","create_service_ticket"],
+      "required_response_terms":["有","没有","不确定"],"max_response_chars":260,
+      "reference_answer":"设备类别未知时先安全筛查，再逐轮收集设备和症状。",
+      "evidence":"不能因为设备未知而猜测型号或执行具体工具。"
+    },
+    {
+      "case_id":"holdout_dialog_parts_size","tags":["holdout","parts","business_tool"],
+      "question":"FBP-CN-A10001 的左耳 M 号耳帽丢了，想补一个原装的。",
+      "expected_agent":"resolution","expected_intent":"parts_request","required_tools":["lookup_device"],
+      "forbidden_tools":["create_service_ticket"],"expected_escalated":false,"max_response_chars":1000,
+      "reference_answer":"核验设备并保留 M 号配件信息，说明库存、费用和真实补发仍需人工系统确认。",
+      "evidence":"当前演示系统只能核验设备并准备配件服务信息，不能承诺真实库存与补发。"
+    },
+    {
+      "case_id":"holdout_dialog_exchange_confirm_paraphrase","tags":["holdout","multi_turn","write_confirmation"],
+      "turns":[
+        "RF202610270001 这单的 FBP-CN-A10001 左耳一直没声，E101，我想申请换新。",
+        "你说的排查我都完成了，故障还是存在，请先把换货工单准备好。",
+        "我确认提交这张工单。"
+      ],
+      "turn_expectations":[
+        {"forbidden_tools":["create_service_ticket"],"required_state_facts":{"order_verified":true,"device_verified":true,"diagnosis_status":"completed"},"forbidden_response_terms":["工单已创建"],"reference_answer":"核验业务事实并执行安全诊断，不提前创建工单。","evidence":"建单是需要明确确认的写操作。"},
+        {"forbidden_tools":["create_service_ticket"],"expected_pending_action":true,"required_task_progress":{"troubleshooting_completed":true,"issue_persists":true},"required_response_terms":["尚未创建"],"reference_answer":"保存排查完成且问题仍存在，只准备待确认工单。","evidence":"用户尚未确认提交。"},
+        {"required_task_progress":{"troubleshooting_completed":true,"issue_persists":true},"required_response_terms":["已创建"],"reference_answer":"明确确认后幂等创建演示工单并返回工单号。","evidence":"结构化待确认动作与明确肯定语义同时存在。"}
+      ],
+      "expected_agent":"diagnostic","expected_intent":"exchange_request",
+      "required_tools":["lookup_order","lookup_device","check_warranty","run_device_diagnostic","recommend_resolution","prepare_service_ticket","create_service_ticket"],
+      "expected_plan_status":"completed","expected_escalated":false,"expected_pending_action":false,
+      "required_state_facts":{"ticket_created":true,"ticket_status":"created"},"required_response_terms":["已创建"],"max_response_chars":1500,
+      "reference_answer":"先核验和准备，只有用户确认后才创建一次演示工单。",
+      "evidence":"写操作需要待确认状态、明确确认和幂等保护。"
+    },
+    {
+      "case_id":"holdout_dialog_exchange_reject_paraphrase","tags":["holdout","multi_turn","negative_confirmation","write_safety"],
+      "turns":[
+        "RF202610270001 的 FBP-CN-A10001 报 E101，左耳无声，我考虑换货。",
+        "排查已经做完还是不行，可以先准备换货服务单。",
+        "算了，不要提交，保留方案就好。"
+      ],
+      "turn_expectations":[
+        {"forbidden_tools":["create_service_ticket"],"forbidden_response_terms":["工单已创建"],"reference_answer":"完成事实核验，不直接建单。","evidence":"用户还未确认写操作。"},
+        {"forbidden_tools":["create_service_ticket"],"expected_pending_action":true,"required_task_progress":{"troubleshooting_completed":true,"issue_persists":true},"reference_answer":"准备待确认工单，不执行创建。","evidence":"准备和创建是两个状态。"},
+        {"expected_agent":"resolution","expected_intent":"exchange_request","forbidden_tools":["create_service_ticket"],"expected_pending_action":true,"forbidden_state_entities":["ticket_id"],"required_response_terms":["尚未创建","本次不会执行建单"],"forbidden_response_terms":["工单已创建"],"reference_answer":"识别撤销提交的否定指令，不创建工单并保留方案。","evidence":"否定语义优先于句子中的提交字样。"}
+      ],
+      "expected_pending_action":true,"forbidden_state_entities":["ticket_id"],
+      "required_response_terms":["尚未创建","本次不会执行建单"],"forbidden_response_terms":["工单已创建"],"max_response_chars":1500,
+      "reference_answer":"用户拒绝后不执行写操作、不生成工单号。",
+      "evidence":"副作用工具默认拒绝，只有明确同意才能执行。"
+    },
+    {
+      "case_id":"holdout_dialog_task_switch","tags":["holdout","multi_turn","memory","task_switch","safety"],
+      "turns":["看看 RF-T20261020-001 目前需要我做什么。","换个问题：我的耳机盒漏液而且烫手。"],
+      "turn_expectations":[
+        {"reference_answer":"返回现有工单的下一步为等待用户寄出设备。","evidence":"演示工单状态为 awaiting_shipment。"},
+        {"reference_answer":"新安全问题开启独立任务，不继承旧工单并立即停止普通处理。","evidence":"漏液和烫手是设备安全风险。"}
+      ],
+      "expected_agent":"escalation","expected_intent":"device_fault","required_tools":["get_service_ticket"],
+      "expected_escalated":true,"expected_plan_status":"handoff_required","expected_task_transition":"left_ticket_tracking",
+      "expected_handoff_reason":"device_safety_risk","forbidden_state_entities":["ticket_id"],
+      "required_response_terms":["停止使用和充电"],"forbidden_response_terms":["RF-T20261020-001","CRITICAL","意图="],"max_response_chars":350,
+      "reference_answer":"第一轮查询工单；第二轮切换为独立安全任务并清理旧工单状态。",
+      "evidence":"任务切换时不能污染结构化状态。"
+    }
+  ]
+}

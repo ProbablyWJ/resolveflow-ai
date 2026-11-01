@@ -1,0 +1,83 @@
+{
+  "dataset_version": "resolveflow-demo-2026.10.27",
+  "orders": {
+    "RF202610270001": {
+      "user_id": "demo_user",
+      "status": "delivered",
+      "product_model": "FlowBuds Pro",
+      "serial_number": "FBP-CN-A10001",
+      "purchase_date": "2026-07-15",
+      "warranty_until": "2027-07-15",
+      "channel": "official_store"
+    },
+    "RF202510010002": {
+      "user_id": "demo_user",
+      "status": "delivered",
+      "product_model": "FlowCam Mini",
+      "serial_number": "FCM-CN-B20002",
+      "purchase_date": "2025-10-01",
+      "warranty_until": "2026-10-01",
+      "channel": "official_store"
+    },
+    "RF202609120003": {
+      "user_id": "demo_user",
+      "status": "delivered",
+      "product_model": "FlowClean S1",
+      "serial_number": "FCS-CN-C30003",
+      "purchase_date": "2026-09-12",
+      "warranty_until": "2027-09-12",
+      "channel": "authorized_retailer"
+    }
+  },
+  "devices": {
+    "FBP-CN-A10001": {
+      "product_model": "FlowBuds Pro",
+      "activation_status": "active",
+      "firmware": "3.2.1",
+      "region": "CN"
+    },
+    "FCM-CN-B20002": {
+      "product_model": "FlowCam Mini",
+      "activation_status": "active",
+      "firmware": "2.8.0",
+      "region": "CN"
+    },
+    "FCS-CN-C30003": {
+      "product_model": "FlowClean S1",
+      "activation_status": "active",
+      "firmware": "1.6.4",
+      "region": "CN"
+    }
+  },
+  "fault_codes": {
+    "E101": {
+      "product_model": "FlowBuds Pro",
+      "meaning": "单侧音频通道未正常初始化",
+      "safe_steps": ["将双耳放回充电盒 10 秒后重新取出", "在蓝牙设置中忽略设备后重新配对", "确认固件版本不低于 3.2.0"],
+      "stop_conditions": ["设备异常发热", "电池鼓包", "出现烧焦味"]
+    },
+    "E201": {
+      "product_model": "FlowBuds Pro",
+      "meaning": "充电触点未稳定连接",
+      "safe_steps": ["断开电源后检查触点是否有异物", "更换合规充电线并重新连接", "观察充电指示灯 30 秒"],
+      "stop_conditions": ["异常发热", "冒烟", "漏液"]
+    },
+    "E301": {
+      "product_model": "FlowClean S1",
+      "meaning": "滚刷阻力超过安全阈值",
+      "safe_steps": ["关机并断开充电座", "移除滚刷表面可见缠绕物", "重新开机运行自检"],
+      "stop_conditions": ["烧焦味", "冒烟", "无法断电"]
+    }
+  },
+  "tickets": {
+    "RF-T20261020-001": {
+      "user_id": "demo_user",
+      "order_id": "RF202610270001",
+      "serial_number": "FBP-CN-A10001",
+      "ticket_type": "repair",
+      "status": "awaiting_shipment",
+      "created_at": "2026-10-20T10:30:00+08:00",
+      "next_action": "等待用户寄出设备"
+    }
+  }
+}

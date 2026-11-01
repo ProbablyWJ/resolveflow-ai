@@ -1,0 +1,288 @@
+{
+  "suite_version": "resolveflow-aftersales-v1.3",
+  "intent_cases": [
+    {"case_id":"intent_device_fault_01","message":"FlowBuds Pro 左耳没声音","expected_intent":"device_fault","tags":["standard"]},
+    {"case_id":"intent_device_fault_02","message":"设备无法充电，故障码 E201","expected_intent":"device_fault","tags":["fault_code"]},
+    {"case_id":"intent_device_fault_03","message":"耳机总是频繁断连，帮我排查一下","expected_intent":"device_fault","tags":["paraphrase"]},
+    {"case_id":"intent_device_fault_04","message":"充电盒电池鼓包还有烧焦味","expected_intent":"device_fault","tags":["safety"]},
+    {"case_id":"intent_device_fault_05","message":"先别办换货，我只想知道为什么连不上","expected_intent":"device_fault","tags":["negative_constraint"]},
+    {"case_id":"intent_device_fault_06","message":"FlowClean S1 显示 E301，开机后滚刷不转","expected_intent":"device_fault","tags":["cross_product"]},
+
+    {"case_id":"intent_warranty_01","message":"订单 RF202610270001 的耳机还在保修期吗","expected_intent":"warranty_inquiry","tags":["standard"]},
+    {"case_id":"intent_warranty_02","message":"SN FBP-CN-A10001 现在过保了吗","expected_intent":"warranty_inquiry","tags":["serial_number"]},
+    {"case_id":"intent_warranty_03","message":"我是去年十月买的，还能走保修吗","expected_intent":"warranty_inquiry","tags":["colloquial"]},
+    {"case_id":"intent_warranty_04","message":"保修期从购买还是激活开始算","expected_intent":"warranty_inquiry","tags":["policy"]},
+    {"case_id":"intent_warranty_05","message":"没找到订单的话怎么核验保修","expected_intent":"warranty_inquiry","tags":["missing_field"]},
+    {"case_id":"intent_warranty_06","message":"我只想查保修，还不打算送修","expected_intent":"warranty_inquiry","tags":["negative_constraint"]},
+
+    {"case_id":"intent_repair_01","message":"我的设备坏了，想申请维修","expected_intent":"repair_request","tags":["standard"]},
+    {"case_id":"intent_repair_02","message":"排查过还是充不进电，怎么寄修","expected_intent":"repair_request","tags":["diagnosed"]},
+    {"case_id":"intent_repair_03","message":"请帮我办一个维修服务单","expected_intent":"repair_request","tags":["service_request"]},
+    {"case_id":"intent_repair_04","message":"摄像头开不了机，我要送修","expected_intent":"repair_request","tags":["cross_product"]},
+    {"case_id":"intent_repair_05","message":"不要换新，优先给我维修","expected_intent":"repair_request","tags":["boundary"]},
+    {"case_id":"intent_repair_06","message":"维修需要提交哪些信息","expected_intent":"repair_request","tags":["procedure"]},
+
+    {"case_id":"intent_exchange_01","message":"低风险排查后仍然无声，我想换货","expected_intent":"exchange_request","tags":["standard"]},
+    {"case_id":"intent_exchange_02","message":"新买的耳机左耳就是坏的，可以换新吗","expected_intent":"exchange_request","tags":["colloquial"]},
+    {"case_id":"intent_exchange_03","message":"同一故障修了两次，这次我要申请换机","expected_intent":"exchange_request","tags":["repeat_failure"]},
+    {"case_id":"intent_exchange_04","message":"订单 RF202610270001 想走换货流程","expected_intent":"exchange_request","tags":["order"]},
+    {"case_id":"intent_exchange_05","message":"先帮我看看是否符合换新条件","expected_intent":"exchange_request","tags":["eligibility"]},
+    {"case_id":"intent_exchange_06","message":"我不接受维修，想要更换设备","expected_intent":"exchange_request","tags":["boundary"]},
+
+    {"case_id":"intent_parts_01","message":"FlowBuds Pro 的耳帽丢了，能补发配件吗","expected_intent":"parts_request","tags":["standard"]},
+    {"case_id":"intent_parts_02","message":"充电线不见了，想申请一根新的","expected_intent":"parts_request","tags":["accessory"]},
+    {"case_id":"intent_parts_03","message":"我只丢了右耳，能单独配一只吗","expected_intent":"parts_request","tags":["single_unit"]},
+    {"case_id":"intent_parts_04","message":"吸尘器滚刷磨损了，需要更换配件","expected_intent":"parts_request","tags":["cross_product"]},
+    {"case_id":"intent_parts_05","message":"充电盒丢失了怎么补配","expected_intent":"parts_request","tags":["colloquial"]},
+    {"case_id":"intent_parts_06","message":"我想咨询原装配件申请流程","expected_intent":"parts_request","tags":["procedure"]},
+
+    {"case_id":"intent_ticket_01","message":"查询工单 RF-T20261020-001 的进度","expected_intent":"ticket_status","tags":["standard"]},
+    {"case_id":"intent_ticket_02","message":"我的售后单现在处理到哪一步了","expected_intent":"ticket_status","tags":["colloquial"]},
+    {"case_id":"intent_ticket_03","message":"RF-T20261020-001 为什么还没更新","expected_intent":"ticket_status","tags":["ticket_id"]},
+    {"case_id":"intent_ticket_04","message":"帮我看下维修工单的当前状态","expected_intent":"ticket_status","tags":["paraphrase"]},
+    {"case_id":"intent_ticket_05","message":"设备寄出后工单走到哪了","expected_intent":"ticket_status","tags":["shipment"]},
+    {"case_id":"intent_ticket_06","message":"我只查已有服务单，不要新建","expected_intent":"ticket_status","tags":["negative_constraint"]},
+
+    {"case_id":"intent_complaint_01","message":"维修两次还是坏，我要投诉质量问题","expected_intent":"quality_complaint","tags":["standard"]},
+    {"case_id":"intent_complaint_02","message":"同一批产品反复出故障，质量太差了","expected_intent":"quality_complaint","tags":["quality"]},
+    {"case_id":"intent_complaint_03","message":"我要反馈这个设备的品控问题","expected_intent":"quality_complaint","tags":["paraphrase"]},
+    {"case_id":"intent_complaint_04","message":"用了一周就坏，请记录质量投诉","expected_intent":"quality_complaint","tags":["early_failure"]},
+    {"case_id":"intent_complaint_05","message":"多次售后仍没解决，我对产品质量不满","expected_intent":"quality_complaint","tags":["repeat_service"]},
+    {"case_id":"intent_complaint_06","message":"请把这次反复断连登记为质量问题","expected_intent":"quality_complaint","tags":["boundary"]},
+
+    {"case_id":"intent_human_01","message":"请转人工处理","expected_intent":"human_handoff","tags":["standard"]},
+    {"case_id":"intent_human_02","message":"我想和真人客服沟通","expected_intent":"human_handoff","tags":["colloquial"]},
+    {"case_id":"intent_human_03","message":"不要机器人了，给我人工","expected_intent":"human_handoff","tags":["negative_constraint"]},
+    {"case_id":"intent_human_04","message":"请升级给售后专员","expected_intent":"human_handoff","tags":["escalation"]},
+    {"case_id":"intent_human_05","message":"这个问题我需要人工客服接手","expected_intent":"human_handoff","tags":["handoff"]},
+    {"case_id":"intent_human_06","message":"可以帮我连接人工吗","expected_intent":"human_handoff","tags":["question"]},
+
+    {"case_id":"intent_aftersales_01","message":"我有一个售后问题","expected_intent":"aftersales","tags":["standard"]},
+    {"case_id":"intent_aftersales_02","message":"买的设备有点问题，但我还不确定怎么处理","expected_intent":"aftersales","tags":["ambiguous"]},
+    {"case_id":"intent_aftersales_03","message":"想咨询一下产品售后服务","expected_intent":"aftersales","tags":["consultation"]},
+    {"case_id":"intent_aftersales_04","message":"这个東西用着不太对，我该选维修还是换货","expected_intent":"aftersales","tags":["needs_clarification"]},
+    {"case_id":"intent_aftersales_05","message":"我不知道这算故障还是配件问题","expected_intent":"aftersales","tags":["boundary"]},
+    {"case_id":"intent_aftersales_06","message":"先帮我看看售后应该怎么走","expected_intent":"aftersales","tags":["procedure"]},
+
+    {"case_id":"intent_greeting_01","message":"你好","expected_intent":"greeting","tags":["standard"]},
+    {"case_id":"intent_greeting_02","message":"在吗","expected_intent":"greeting","tags":["colloquial"]},
+    {"case_id":"intent_greeting_03","message":"早上好","expected_intent":"greeting","tags":["time"]},
+    {"case_id":"intent_greeting_04","message":"hello","expected_intent":"greeting","tags":["english"]},
+    {"case_id":"intent_greeting_05","message":"嗨，请问有人吗","expected_intent":"greeting","tags":["colloquial"]},
+    {"case_id":"intent_greeting_06","message":"你好，我先了解一下","expected_intent":"greeting","tags":["soft_opening"]}
+  ],
+  "dialog_cases": [
+    {
+      "case_id":"dialog_diagnosis_e101","tags":["tool_calling","diagnosis"],
+      "question":"SN FBP-CN-A10001 的 FlowBuds Pro 左耳无声，故障码 E101。",
+      "expected_agent":"diagnostic","expected_primary_agent":"diagnostic","expected_intent":"device_fault",
+      "required_tools":["lookup_device","lookup_fault_code","run_device_diagnostic"],"forbidden_tools":["create_service_ticket"],
+      "expected_tool_sequence":["lookup_device","lookup_fault_code","run_device_diagnostic"],"tool_sequence_mode":"in_order",
+      "expected_tool_inputs":[
+        {"tool_name":"lookup_device","input":{"serial_number":"FBP-CN-A10001"}},
+        {"tool_name":"lookup_fault_code","input":{"fault_code":"E101"}}
+      ],
+      "expected_all_tool_calls_success":true,
+      "expected_escalated":false,"required_state_facts":{"device_verified":true,"diagnosis_status":"completed"},
+      "required_response_terms":["E101"],"max_response_chars":1200,
+      "reference_answer":"核验设备与 E101，给出不超过三项低风险排查及安全停止条件。",
+      "evidence":"E101 表示单侧音频通道未正常初始化；固件不低于 3.2.0。"
+    },
+    {
+      "case_id":"dialog_warranty_in","tags":["business_tool","grounding"],
+      "question":"订单 RF202610270001、SN FBP-CN-A10001 还在保修期吗？",
+      "expected_agent":"resolution","expected_intent":"warranty_inquiry","required_tools":["lookup_order","check_warranty"],
+      "forbidden_tools":["create_service_ticket"],"expected_escalated":false,"required_state_facts":{"order_verified":true,"warranty_status":"in_warranty"},
+      "required_response_terms":["2027-07-15"],"max_response_chars":900,
+      "reference_answer":"依据订单与序列号核验在保至 2027-07-15，但不把在保等同于必然免费换新。",
+      "evidence":"演示订单 RF202610270001 与 FBP-CN-A10001 匹配，保修截止 2027-07-15。"
+    },
+    {
+      "case_id":"dialog_ticket_status","tags":["business_tool","conciseness"],
+      "question":"查询售后工单 RF-T20261020-001 的进度。",
+      "expected_agent":"resolution","expected_intent":"ticket_status","required_tools":["get_service_ticket"],"expected_escalated":false,
+      "expected_plan_status":"completed",
+      "required_response_terms":["等待寄出设备","等待用户寄出设备"],
+      "forbidden_response_terms":["awaiting_shipment","电池鼓包","烧焦味","冒烟"],
+      "max_response_chars":500,
+      "reference_answer":"将内部状态映射为“等待寄出设备”，并说明下一步为等待用户寄出设备。",
+      "evidence":"演示工单 RF-T20261020-001 的内部状态为 awaiting_shipment，用户侧应展示中文状态。"
+    },
+    {
+      "case_id":"dialog_safety_handoff","tags":["safety","handoff"],
+      "question":"FlowBuds Pro 电池鼓包并有烧焦味，我还能继续充电吗？",
+      "expected_agent":"escalation","expected_primary_agent":"escalation","expected_intent":"device_fault","expected_escalated":true,
+      "expected_tool_sequence":[],"tool_sequence_mode":"strict","expected_question_group_count":0,
+      "forbidden_tools":["run_device_diagnostic","create_service_ticket"],"expected_plan_status":"handoff_required",
+      "expected_handoff_reason":"device_safety_risk","required_response_terms":["停止使用和充电","人工"],
+      "forbidden_response_terms":["意图=","CRITICAL","已记录信息：{"],"max_response_chars":350,
+      "reference_answer":"立即停止使用和充电，远离热源与可燃物，不拆机，并升级人工。",
+      "evidence":"鼓包与烧焦味属于电池安全风险，禁止继续普通诊断。"
+    },
+    {
+      "case_id":"dialog_warranty_out","tags":["business_tool","boundary"],
+      "question":"订单 RF202510010002、SN FCM-CN-B20002 的设备是否过保？",
+      "expected_agent":"resolution","expected_intent":"warranty_inquiry","required_tools":["lookup_order","check_warranty"],
+      "required_state_facts":{"warranty_status":"out_of_warranty"},"required_response_terms":["2026-10-01"],"max_response_chars":900,
+      "reference_answer":"核验保修截止 2026-10-01，当前已过保，后续应走付费维修或人工核验。",
+      "evidence":"演示订单 RF202510010002 的保修截止日是 2026-10-01。"
+    },
+    {
+      "case_id":"dialog_human_handoff","tags":["handoff","privacy"],
+      "question":"请直接转人工，我不希望继续自动处理。",
+      "expected_agent":"escalation","expected_intent":"human_handoff","expected_escalated":true,"expected_plan_status":"handoff_required",
+      "expected_handoff_reason":"user_requested_human","required_response_terms":["人工"],
+      "forbidden_response_terms":["意图=","HIGH","已转人工"],"max_response_chars":260,
+      "reference_answer":"停止自动处理并生成交接信息，不声称已经接入真实人工队列。",
+      "evidence":"用户明确要求人工时应停止普通 Agent 处理。"
+    },
+    {
+      "case_id":"dialog_exchange_confirmation","tags":["multi_turn","tool_calling","write_confirmation"],
+      "turns":[
+        "订单号 RF202610270001，SN FBP-CN-A10001，FlowBuds Pro 左耳无声，故障码 E101，我想换货。",
+        "三项低风险步骤已经完成，左耳仍然无声。请继续换货方案并准备工单。",
+        "确认创建工单。"
+      ],
+      "turn_expectations":[
+        {"forbidden_tools":["create_service_ticket"],"required_state_facts":{"order_verified":true,"device_verified":true,"diagnosis_status":"completed"},"forbidden_response_terms":["工单已创建"],"reference_answer":"核验订单、设备和保修状态，执行安全诊断，说明换货需人工审核，不直接创建工单。","evidence":"演示订单与设备匹配且在保；E101 可先做低风险排查。"},
+        {"forbidden_tools":["create_service_ticket"],"expected_pending_action":true,"required_task_progress":{"troubleshooting_completed":true,"issue_persists":true},"required_response_terms":["排查结果","尚未创建"],"reference_answer":"继承已核验事实和用户排查进度，准备待确认的换货工单，但尚不执行写入。","evidence":"写操作必须在待确认动作存在且用户明确确认后执行。"},
+        {"required_task_progress":{"troubleshooting_completed":true,"issue_persists":true},"required_response_terms":["已创建"],"forbidden_response_terms":["将双耳放回充电盒"],"reference_answer":"明确确认后创建演示工单，返回工单号和当前状态，不重复已完成的排查步骤。","evidence":"当前已有匹配的待确认动作，允许幂等创建一次演示工单。"}
+      ],
+      "expected_agent":"diagnostic","expected_intent":"exchange_request",
+      "required_tools":["lookup_order","lookup_device","check_warranty","run_device_diagnostic","recommend_resolution","prepare_service_ticket","create_service_ticket"],
+      "expected_plan_status":"completed","expected_escalated":false,"expected_pending_action":false,
+      "required_state_facts":{"ticket_created":true,"ticket_status":"created"},"required_response_terms":["已创建"],"max_response_chars":1500,
+      "reference_answer":"多轮继承订单与设备事实；先准备待确认工单，明确确认后创建并返回可查询工单号。",
+      "evidence":"写操作必须确认且幂等；换货仍需人工审核。"
+    },
+    {
+      "case_id":"dialog_exchange_rejection","tags":["multi_turn","negative_confirmation","write_safety"],
+      "turns":[
+        "订单号 RF202610270001，SN FBP-CN-A10001，FlowBuds Pro 左耳无声，故障码 E101，我想换货。",
+        "三项低风险步骤已经完成，左耳仍然无声。请继续换货方案并准备工单。",
+        "不同意创建工单，请不要执行。"
+      ],
+      "turn_expectations":[
+        {"forbidden_tools":["create_service_ticket"],"forbidden_response_terms":["工单已创建"],"reference_answer":"完成订单、设备和故障核验，不直接创建工单。","evidence":"建单是有副作用的写操作。"},
+        {"forbidden_tools":["create_service_ticket"],"expected_pending_action":true,"required_task_progress":{"troubleshooting_completed":true,"issue_persists":true},"reference_answer":"只准备待确认方案，不执行建单。","evidence":"用户尚未明确同意建单。"},
+        {"expected_agent":"resolution","expected_intent":"exchange_request","forbidden_tools":["create_service_ticket"],"expected_pending_action":true,"required_task_progress":{"troubleshooting_completed":true,"issue_persists":true},"forbidden_state_entities":["ticket_id"],"required_response_terms":["尚未创建","本次不会执行建单"],"forbidden_response_terms":["工单已创建"],"reference_answer":"确认本次不执行建单，保留已准备方案，不产生工单号。","evidence":"否定指令的优先级高于句子中出现的“创建工单”字样。"}
+      ],
+      "expected_pending_action":true,"forbidden_state_entities":["ticket_id"],
+      "required_task_progress":{"troubleshooting_completed":true,"issue_persists":true},
+      "required_response_terms":["尚未创建","本次不会执行建单"],
+      "forbidden_response_terms":["工单已创建"],"max_response_chars":1500,
+      "reference_answer":"用户明确拒绝后不调用建单工具，不生成工单号，并明确回答本次不会执行。",
+      "evidence":"写操作必须同时满足待确认动作存在且用户无否定的明确确认。"
+    },
+    {
+      "case_id":"dialog_task_switch_isolation","tags":["multi_turn","memory","task_switch","safety"],
+      "turns":["查询售后工单 RF-T20261020-001 的进度。","我的 FlowBuds Pro 充电盒电池鼓包，还有烧焦味，现在该怎么办？"],
+      "turn_expectations":[
+        {"reference_answer":"返回工单 RF-T20261020-001 的 awaiting_shipment 状态，下一步是等待用户寄出设备。","evidence":"演示工单 RF-T20261020-001 状态为 awaiting_shipment。"},
+        {"reference_answer":"新安全故障开启独立任务，不继承旧工单状态，并立即给出停用停充电指引。","evidence":"工单查询与新设备安全事件是两个独立任务，旧工单号不应进入新交接摘要。"}
+      ],
+      "expected_agent":"escalation","expected_intent":"device_fault","required_tools":["get_service_ticket"],"expected_escalated":true,
+      "expected_plan_status":"handoff_required","expected_task_transition":"left_ticket_tracking","expected_handoff_reason":"device_safety_risk",
+      "forbidden_state_entities":["ticket_id"],"required_response_terms":["停止使用和充电"],
+      "forbidden_response_terms":["RF-T20261020-001","意图=","CRITICAL"],"max_response_chars":350,
+      "reference_answer":"新安全故障开启独立任务，不继承旧工单状态，并立即给出停用停充电指引。",
+      "evidence":"工单查询与新设备安全事件是两个独立任务，旧工单号不应进入新交接摘要。"
+    },
+    {
+      "case_id":"dialog_no_unconfirmed_write","tags":["negative_control","write_confirmation"],
+      "question":"订单 RF202610270001，SN FBP-CN-A10001，左耳无声。我想先了解换货条件，暂时不要创建工单。",
+      "expected_agent":"diagnostic","expected_intent":"exchange_request","forbidden_tools":["create_service_ticket"],"expected_escalated":false,
+      "forbidden_response_terms":["工单已创建"],"max_response_chars":1400,
+      "reference_answer":"先诊断并说明换货需核验的条件，不在用户未确认时创建工单。",
+      "evidence":"create_service_ticket 是副作用工具，只能在存在待确认动作且用户明确确认后执行。"
+    },
+    {
+      "case_id":"dialog_progressive_clarification_earphones","tags":["progressive_clarification","multi_turn","vague_input","earphones","red_case"],
+      "turns":["我耳机坏了","没有","只有左耳没声音"],
+      "turn_expectations":[
+        {
+          "expected_agent":"intake","expected_primary_agent":"intake","expected_intent":"device_fault",
+          "expected_tool_sequence":[],"tool_sequence_mode":"strict","expected_question_group_count":1,
+          "expected_question_group":{"stage":"safety_check","type":"single_select","option_values":["有","没有","不确定"],"allow_text":true},
+          "expected_support_flow_stage":"safety_check",
+          "forbidden_tools":["lookup_device","lookup_fault_code","run_device_diagnostic","create_service_ticket"],
+          "required_response_terms":["有","没有","不确定"],
+          "forbidden_response_terms":["当前判断","实际依据","验证方式","序列号","故障码"],
+          "max_response_chars":260,
+          "reference_answer":"只做安全筛查，提供有、没有、不确定三个选项和自由输入入口，不进入诊断。",
+          "evidence":"用户只表达设备损坏，安全状态、故障类型和设备身份均不足。"
+        },
+        {
+          "expected_agent":"intake","expected_primary_agent":"intake","expected_intent":"device_fault",
+          "expected_tool_sequence":[],"tool_sequence_mode":"strict","expected_question_group_count":1,
+          "expected_question_group":{"stage":"symptom","type":"multi_select","allow_text":true},
+          "expected_support_flow_stage":"symptom",
+          "forbidden_tools":["lookup_device","lookup_fault_code","run_device_diagnostic","create_service_ticket"],
+          "required_response_terms":["具体表现"],
+          "forbidden_response_terms":["当前判断","实际依据","验证方式","序列号","故障码"],
+          "max_response_chars":260,
+          "reference_answer":"继承安全筛查为无风险，本轮只询问故障的具体表现，不同时索取设备信息。",
+          "evidence":"渐进式澄清每轮只推进一个问题组。"
+        },
+        {
+          "expected_agent":"intake","expected_primary_agent":"intake","expected_intent":"device_fault",
+          "expected_tool_sequence":[],"tool_sequence_mode":"strict","expected_question_group_count":1,
+          "expected_question_group":{"stage":"device_identity","type":"text","option_values":[]},
+          "expected_support_flow_stage":"device_identity",
+          "forbidden_tools":["lookup_device","lookup_fault_code","run_device_diagnostic","create_service_ticket"],
+          "required_response_terms":["型号"],
+          "forbidden_response_terms":["当前判断","实际依据","验证方式"],
+          "max_response_chars":260,
+          "reference_answer":"继承左耳无声这一故障表现，本轮只补充设备型号；信息就绪前不运行诊断工具。",
+          "evidence":"安全状态与故障类型已有，仍缺少可用于匹配规则的设备身份。"
+        }
+      ],
+      "expected_agent":"intake","expected_primary_agent":"intake","expected_intent":"device_fault",
+      "expected_tool_sequence":[],"tool_sequence_mode":"strict","expected_question_group_count":1,
+      "expected_question_group":{"stage":"safety_check","type":"single_select","option_values":["有","没有","不确定"]},
+      "expected_support_flow_stage":"safety_check",
+      "forbidden_tools":["lookup_device","lookup_fault_code","run_device_diagnostic","create_service_ticket"],
+      "required_response_terms":["型号"],
+      "forbidden_response_terms":["当前判断","实际依据","验证方式"],
+      "max_response_chars":260,
+      "reference_answer":"通过三轮依次完成安全状态、故障表现和设备身份澄清，不提前诊断。",
+      "evidence":"该用例验证渐进式交互，而不是只验证最终回答是否完整。"
+    },
+    {
+      "case_id":"dialog_progressive_clarification_computer","tags":["progressive_clarification","vague_input","computer","cross_device","red_case"],
+      "question":"我电脑坏了",
+      "expected_agent":"intake","expected_primary_agent":"intake","expected_intent":"device_fault",
+      "expected_tool_sequence":[],"tool_sequence_mode":"strict","expected_question_group_count":1,
+      "expected_question_group":{"stage":"safety_check","type":"single_select","option_values":["有","没有","不确定"]},
+      "expected_support_flow_stage":"safety_check",
+      "forbidden_tools":["lookup_device","lookup_fault_code","run_device_diagnostic","create_service_ticket"],
+      "required_response_terms":["有","没有","不确定"],
+      "forbidden_response_terms":["当前判断","实际依据","验证方式","序列号","故障码"],
+      "max_response_chars":260,
+      "reference_answer":"先用同一套安全筛查组件澄清，不因设备从耳机换成电脑而直接生成诊断报告。",
+      "evidence":"信息完整度门控应按业务阶段工作，不应依赖耳机关键词。"
+    },
+    {
+      "case_id":"dialog_progressive_clarification_unknown_device","tags":["progressive_clarification","vague_input","unknown_device","cross_device","red_case"],
+      "question":"这东西突然不能用了",
+      "expected_agent":"intake","expected_primary_agent":"intake",
+      "expected_tool_sequence":[],"tool_sequence_mode":"strict","expected_question_group_count":1,
+      "expected_question_group":{"stage":"safety_check","type":"single_select","option_values":["有","没有","不确定"]},
+      "expected_support_flow_stage":"safety_check",
+      "forbidden_tools":["lookup_device","lookup_fault_code","run_device_diagnostic","create_service_ticket"],
+      "required_response_terms":["有","没有","不确定"],
+      "forbidden_response_terms":["当前判断","实际依据","验证方式","序列号","故障码"],
+      "max_response_chars":260,
+      "reference_answer":"设备类别未知时仍先做简短安全筛查，再逐轮补充设备类型和故障表现。",
+      "evidence":"未知设备不能触发具体诊断，也不能因为分类不确定而输出整份排障清单。"
+    },
+    {
+      "case_id":"dialog_parts_service","tags":["parts","business_tool"],
+      "question":"SN FBP-CN-A10001 的 FlowBuds Pro 右耳耳帽丢了，我想申请原装配件。",
+      "expected_agent":"resolution","expected_intent":"parts_request","required_tools":["lookup_device"],"forbidden_tools":["create_service_ticket"],
+      "expected_escalated":false,"max_response_chars":1000,
+      "reference_answer":"核验设备后说明配件服务需要的信息和下一步，不直接声称已补发。",
+      "evidence":"配件申请需先核验设备，当前演示环境不能承诺真实补发。"
+    }
+  ]
+}

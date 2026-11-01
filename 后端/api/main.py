@@ -629,8 +629,8 @@ class EvalDialogInput(BaseModel):
 
 
 class EvalRunInput(BaseModel):
-    """评测请求。默认运行开发回归集；holdout 用于独立收口验证。"""
-    dataset: Literal["development", "holdout"] = "development"
+    """评测请求。默认运行开发回归集；holdout/holdout_v2 用于独立收口验证。"""
+    dataset: Literal["development", "holdout", "holdout_v2"] = "development"
     intent_cases: Optional[List[EvalIntentInput]] = Field(default=None, max_length=200)
     dialog_cases: Optional[List[EvalDialogInput]] = Field(default=None, max_length=100)
 
@@ -775,6 +775,9 @@ async def _execute_eval(body: Optional[EvalRunInput] = None, progress=None):
         HOLDOUT_DIALOG_CASES,
         HOLDOUT_INTENT_CASES,
         HOLDOUT_SUITE_VERSION,
+        HOLDOUT_V2_DIALOG_CASES,
+        HOLDOUT_V2_INTENT_CASES,
+        HOLDOUT_V2_SUITE_VERSION,
         IntentTestCase,
     )
 
@@ -783,6 +786,10 @@ async def _execute_eval(body: Optional[EvalRunInput] = None, progress=None):
         built_in_intent_cases = HOLDOUT_INTENT_CASES
         built_in_dialog_cases = HOLDOUT_DIALOG_CASES
         suite_version = HOLDOUT_SUITE_VERSION
+    elif dataset == "holdout_v2":
+        built_in_intent_cases = HOLDOUT_V2_INTENT_CASES
+        built_in_dialog_cases = HOLDOUT_V2_DIALOG_CASES
+        suite_version = HOLDOUT_V2_SUITE_VERSION
     else:
         built_in_intent_cases = DEFAULT_INTENT_CASES
         built_in_dialog_cases = DEFAULT_DIALOG_CASES

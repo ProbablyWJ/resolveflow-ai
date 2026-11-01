@@ -13,6 +13,9 @@ from evaluation.evaluator import (
     HOLDOUT_DIALOG_CASES,
     HOLDOUT_INTENT_CASES,
     HOLDOUT_SUITE_VERSION,
+    HOLDOUT_V2_DIALOG_CASES,
+    HOLDOUT_V2_INTENT_CASES,
+    HOLDOUT_V2_SUITE_VERSION,
     EndToEndEvaluator,
     IntentEvaluator,
     LLMJudge,
@@ -53,6 +56,25 @@ def test_holdout_suite_is_separate_balanced_and_larger_than_development_intent_s
     assert len(HOLDOUT_DIALOG_CASES) == 15
     assert len(holdout_ids) == len(set(holdout_ids))
     assert development_ids.isdisjoint(holdout_ids)
+
+
+def test_holdout_v2_is_balanced_and_disjoint_before_first_run():
+    support = Counter(case.expected_intent for case in HOLDOUT_V2_INTENT_CASES)
+    v2_ids = [case.case_id for case in HOLDOUT_V2_INTENT_CASES]
+    v2_ids.extend(case["case_id"] for case in HOLDOUT_V2_DIALOG_CASES)
+    previous_ids = {case.case_id for case in DEFAULT_INTENT_CASES + HOLDOUT_INTENT_CASES}
+    previous_ids.update(case["case_id"] for case in DEFAULT_DIALOG_CASES + HOLDOUT_DIALOG_CASES)
+    previous_messages = {case.message for case in DEFAULT_INTENT_CASES + HOLDOUT_INTENT_CASES}
+
+    assert HOLDOUT_V2_SUITE_VERSION == "resolveflow-aftersales-holdout-v2.0"
+    assert len(HOLDOUT_V2_INTENT_CASES) == 100
+    assert len(support) == 10
+    assert set(support.values()) == {10}
+    assert len(HOLDOUT_V2_DIALOG_CASES) == 12
+    assert sum(len(case.get("turns") or [case["question"]]) for case in HOLDOUT_V2_DIALOG_CASES) == 18
+    assert len(v2_ids) == len(set(v2_ids))
+    assert previous_ids.isdisjoint(v2_ids)
+    assert previous_messages.isdisjoint({case.message for case in HOLDOUT_V2_INTENT_CASES})
 
 
 def test_trajectory_contract_supports_order_modes_and_argument_subsets():

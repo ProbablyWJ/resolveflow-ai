@@ -1130,3 +1130,4 @@ def _load_suite(filename: str) -> tuple[str, List[IntentTestCase], List[Dict[str
 
 DEFAULT_SUITE_VERSION, DEFAULT_INTENT_CASES, DEFAULT_DIALOG_CASES = _load_suite("resolveflow_v1.json")
 HOLDOUT_SUITE_VERSION, HOLDOUT_INTENT_CASES, HOLDOUT_DIALOG_CASES = _load_suite("resolveflow_holdout_v1.json")
+HOLDOUT_V2_SUITE_VERSION, HOLDOUT_V2_INTENT_CASES, HOLDOUT_V2_DIALOG_CASES = _load_suite("resolveflow_holdout_v2.json")

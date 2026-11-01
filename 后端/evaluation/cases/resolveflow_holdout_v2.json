@@ -1,0 +1,226 @@
+{
+  "suite_version": "resolveflow-aftersales-holdout-v2.0",
+  "intent_cases": [
+    {"case_id":"v2_intent_device_fault_01","message":"耳机一放进充电仓指示灯就乱闪，先帮我查原因","expected_intent":"device_fault","tags":["v2","colloquial"]},
+    {"case_id":"v2_intent_device_fault_02","message":"扫地机吸几分钟就自己关机，没有错误码","expected_intent":"device_fault","tags":["v2","cross_product"]},
+    {"case_id":"v2_intent_device_fault_03","message":"摄像头显示在线但画面一直是黑的","expected_intent":"device_fault","tags":["v2","cross_product"]},
+    {"case_id":"v2_intent_device_fault_04","message":"左耳声音比右耳小很多，怎么排查","expected_intent":"device_fault","tags":["v2","symptom"]},
+    {"case_id":"v2_intent_device_fault_05","message":"充电盒插上线完全不亮","expected_intent":"device_fault","tags":["v2","charging"]},
+    {"case_id":"v2_intent_device_fault_06","message":"升级固件以后设备隔一会儿就重启","expected_intent":"device_fault","tags":["v2","firmware"]},
+    {"case_id":"v2_intent_device_fault_07","message":"蓝牙显示已连接，可是播放没有声音","expected_intent":"device_fault","tags":["v2","connectivity"]},
+    {"case_id":"v2_intent_device_fault_08","message":"清扫机一直提示悬崖传感器异常","expected_intent":"device_fault","tags":["v2","cross_product"]},
+    {"case_id":"v2_intent_device_fault_09","message":"耳机麦克风突然有很大的电流声","expected_intent":"device_fault","tags":["v2","audio"]},
+    {"case_id":"v2_intent_device_fault_10","message":"它今天突然不工作了，我想先检查故障","expected_intent":"device_fault","tags":["v2","ambiguous_device"]},
+
+    {"case_id":"v2_intent_warranty_01","message":"用序列号能查还剩多少质保时间吗","expected_intent":"warranty_inquiry","tags":["v2","serial_number"]},
+    {"case_id":"v2_intent_warranty_02","message":"之前不小心摔过一次，这种情况还在保吗","expected_intent":"warranty_inquiry","tags":["v2","policy_boundary"]},
+    {"case_id":"v2_intent_warranty_03","message":"在保修期内寄修，运费规则是什么","expected_intent":"warranty_inquiry","tags":["v2","policy"]},
+    {"case_id":"v2_intent_warranty_04","message":"没有纸质发票还能核验保修资格吗","expected_intent":"warranty_inquiry","tags":["v2","missing_document"]},
+    {"case_id":"v2_intent_warranty_05","message":"售后更换的配件单独保多久","expected_intent":"warranty_inquiry","tags":["v2","parts_policy"]},
+    {"case_id":"v2_intent_warranty_06","message":"海外购买的机器在国内能不能享受质保","expected_intent":"warranty_inquiry","tags":["v2","region_policy"]},
+    {"case_id":"v2_intent_warranty_07","message":"随主机赠送的配件也有保修吗","expected_intent":"warranty_inquiry","tags":["v2","accessory_policy"]},
+    {"case_id":"v2_intent_warranty_08","message":"电池的质保期和整机是一样的吗","expected_intent":"warranty_inquiry","tags":["v2","policy"]},
+    {"case_id":"v2_intent_warranty_09","message":"只帮我确认是否在保，先不要发起任何服务","expected_intent":"warranty_inquiry","tags":["v2","negative_constraint"]},
+    {"case_id":"v2_intent_warranty_10","message":"购买日期记不清了，要怎么查保修截止时间","expected_intent":"warranty_inquiry","tags":["v2","missing_field"]},
+
+    {"case_id":"v2_intent_repair_01","message":"我决定送修了，帮我走维修流程","expected_intent":"repair_request","tags":["v2","explicit"]},
+    {"case_id":"v2_intent_repair_02","message":"这个设备支持预约上门维修吗","expected_intent":"repair_request","tags":["v2","service_mode"]},
+    {"case_id":"v2_intent_repair_03","message":"想预约一次官方检测和修理","expected_intent":"repair_request","tags":["v2","procedure"]},
+    {"case_id":"v2_intent_repair_04","message":"不要换机，我只想把现在这台修好","expected_intent":"repair_request","tags":["v2","negative_constraint"]},
+    {"case_id":"v2_intent_repair_05","message":"耳机进过水还能送官方检修吗","expected_intent":"repair_request","tags":["v2","policy_boundary"]},
+    {"case_id":"v2_intent_repair_06","message":"官方寄修地址和步骤在哪里看","expected_intent":"repair_request","tags":["v2","procedure"]},
+    {"case_id":"v2_intent_repair_07","message":"请准备维修申请，不是换货申请","expected_intent":"repair_request","tags":["v2","boundary"]},
+    {"case_id":"v2_intent_repair_08","message":"已经过保了还能付费维修吗","expected_intent":"repair_request","tags":["v2","out_of_warranty"]},
+    {"case_id":"v2_intent_repair_09","message":"摄像头坏了要怎么返修","expected_intent":"repair_request","tags":["v2","cross_product"]},
+    {"case_id":"v2_intent_repair_10","message":"清扫机器人需要返厂检测","expected_intent":"repair_request","tags":["v2","cross_product"]},
+
+    {"case_id":"v2_intent_exchange_01","message":"这次不要维修，我要申请换货","expected_intent":"exchange_request","tags":["v2","boundary"]},
+    {"case_id":"v2_intent_exchange_02","message":"刚拆封就无法开机，可以直接换一台吗","expected_intent":"exchange_request","tags":["v2","early_failure"]},
+    {"case_id":"v2_intent_exchange_03","message":"先帮我核验一下换新的条件","expected_intent":"exchange_request","tags":["v2","eligibility"]},
+    {"case_id":"v2_intent_exchange_04","message":"同一个问题已经修了两次，我想换机","expected_intent":"exchange_request","tags":["v2","repeat_failure"]},
+    {"case_id":"v2_intent_exchange_05","message":"七天内出现硬件故障要如何更换","expected_intent":"exchange_request","tags":["v2","policy"]},
+    {"case_id":"v2_intent_exchange_06","message":"我想申请整机更换，不是补一个配件","expected_intent":"exchange_request","tags":["v2","parts_boundary"]},
+    {"case_id":"v2_intent_exchange_07","message":"这副耳机确认故障后能换一副吗","expected_intent":"exchange_request","tags":["v2","diagnosed"]},
+    {"case_id":"v2_intent_exchange_08","message":"只查询换货资格，暂时不要提交售后单","expected_intent":"exchange_request","tags":["v2","negative_constraint"]},
+    {"case_id":"v2_intent_exchange_09","message":"能把故障机替换成同型号设备吗","expected_intent":"exchange_request","tags":["v2","paraphrase"]},
+    {"case_id":"v2_intent_exchange_10","message":"我要办理设备置换","expected_intent":"exchange_request","tags":["v2","short_query"]},
+
+    {"case_id":"v2_intent_parts_01","message":"右耳丢了，能单独再配一只吗","expected_intent":"parts_request","tags":["v2","single_unit"]},
+    {"case_id":"v2_intent_parts_02","message":"原装充电线断了，想申请一根新的","expected_intent":"parts_request","tags":["v2","accessory"]},
+    {"case_id":"v2_intent_parts_03","message":"扫地机的尘袋用完了，哪里补配","expected_intent":"parts_request","tags":["v2","cross_product"]},
+    {"case_id":"v2_intent_parts_04","message":"摄像头墙面支架可以单独补发吗","expected_intent":"parts_request","tags":["v2","cross_product"]},
+    {"case_id":"v2_intent_parts_05","message":"净化设备的滤芯需要重新配一个","expected_intent":"parts_request","tags":["v2","cross_product"]},
+    {"case_id":"v2_intent_parts_06","message":"S 号耳帽不见了，能补一个吗","expected_intent":"parts_request","tags":["v2","size"]},
+    {"case_id":"v2_intent_parts_07","message":"耳机还在，充电仓单独丢了","expected_intent":"parts_request","tags":["v2","charging_case"]},
+    {"case_id":"v2_intent_parts_08","message":"不用修整机，只需要更换滚刷","expected_intent":"parts_request","tags":["v2","negative_constraint"]},
+    {"case_id":"v2_intent_parts_09","message":"电源适配器损坏了，如何申请原装配件","expected_intent":"parts_request","tags":["v2","accessory"]},
+    {"case_id":"v2_intent_parts_10","message":"售后配件补发要从哪里申请","expected_intent":"parts_request","tags":["v2","procedure"]},
+
+    {"case_id":"v2_intent_ticket_01","message":"服务单 RF-T20261020-001 最近更新了吗","expected_intent":"ticket_status","tags":["v2","ticket_id"]},
+    {"case_id":"v2_intent_ticket_02","message":"我的维修申请审批到哪一步了","expected_intent":"ticket_status","tags":["v2","repair"]},
+    {"case_id":"v2_intent_ticket_03","message":"寄修包裹到售后中心签收了吗","expected_intent":"ticket_status","tags":["v2","shipment"]},
+    {"case_id":"v2_intent_ticket_04","message":"换货服务单目前是什么状态","expected_intent":"ticket_status","tags":["v2","exchange"]},
+    {"case_id":"v2_intent_ticket_05","message":"昨天建的售后单有处理结果了吗","expected_intent":"ticket_status","tags":["v2","colloquial"]},
+    {"case_id":"v2_intent_ticket_06","message":"现在整个售后流程走到哪个节点","expected_intent":"ticket_status","tags":["v2","paraphrase"]},
+    {"case_id":"v2_intent_ticket_07","message":"不要再开新单，只查询现有记录","expected_intent":"ticket_status","tags":["v2","negative_constraint"]},
+    {"case_id":"v2_intent_ticket_08","message":"工单好几天没动了，帮我看下进度","expected_intent":"ticket_status","tags":["v2","delay"]},
+    {"case_id":"v2_intent_ticket_09","message":"维修是不是已经完成可以寄回了","expected_intent":"ticket_status","tags":["v2","completion"]},
+    {"case_id":"v2_intent_ticket_10","message":"查一下上次服务记录的处理结果","expected_intent":"ticket_status","tags":["v2","history"]},
+
+    {"case_id":"v2_intent_complaint_01","message":"同型号两台都坏了，我要登记质量投诉","expected_intent":"quality_complaint","tags":["v2","repeat_failure"]},
+    {"case_id":"v2_intent_complaint_02","message":"已经维修三次还是复发，正式投诉","expected_intent":"quality_complaint","tags":["v2","repeat_service"]},
+    {"case_id":"v2_intent_complaint_03","message":"这批产品像是有通病，请记录质量问题","expected_intent":"quality_complaint","tags":["v2","batch_issue"]},
+    {"case_id":"v2_intent_complaint_04","message":"新机器两天就坏，品控让我无法接受","expected_intent":"quality_complaint","tags":["v2","early_failure"]},
+    {"case_id":"v2_intent_complaint_05","message":"我要正式登记产品质量异常","expected_intent":"quality_complaint","tags":["v2","formal"]},
+    {"case_id":"v2_intent_complaint_06","message":"维修回来马上又出现原故障，我要投诉","expected_intent":"quality_complaint","tags":["v2","repeat_failure"]},
+    {"case_id":"v2_intent_complaint_07","message":"我怀疑这是结构设计缺陷，不是普通损坏","expected_intent":"quality_complaint","tags":["v2","design_issue"]},
+    {"case_id":"v2_intent_complaint_08","message":"售后一直重复让我重置却不解决，我要反馈","expected_intent":"quality_complaint","tags":["v2","service_quality"]},
+    {"case_id":"v2_intent_complaint_09","message":"网上很多人都遇到同样异响，属于质量问题","expected_intent":"quality_complaint","tags":["v2","batch_issue"]},
+    {"case_id":"v2_intent_complaint_10","message":"先做质量反馈，不是申请普通维修","expected_intent":"quality_complaint","tags":["v2","boundary"]},
+
+    {"case_id":"v2_intent_human_01","message":"请让人工客服接管这次对话","expected_intent":"human_handoff","tags":["v2","explicit"]},
+    {"case_id":"v2_intent_human_02","message":"机器人先停一下，我要找真人","expected_intent":"human_handoff","tags":["v2","colloquial"]},
+    {"case_id":"v2_intent_human_03","message":"把目前收集的信息交给人工专员","expected_intent":"human_handoff","tags":["v2","handoff"]},
+    {"case_id":"v2_intent_human_04","message":"这个例外情况需要工作人员处理","expected_intent":"human_handoff","tags":["v2","exception"]},
+    {"case_id":"v2_intent_human_05","message":"我想直接和售后人员沟通","expected_intent":"human_handoff","tags":["v2","explicit"]},
+    {"case_id":"v2_intent_human_06","message":"请结束自动处理并转接客服","expected_intent":"human_handoff","tags":["v2","stop_automation"]},
+    {"case_id":"v2_intent_human_07","message":"这件事机器处理不了，找个人来吧","expected_intent":"human_handoff","tags":["v2","colloquial"]},
+    {"case_id":"v2_intent_human_08","message":"能给我人工服务入口吗","expected_intent":"human_handoff","tags":["v2","question"]},
+    {"case_id":"v2_intent_human_09","message":"升级给人工售后继续跟进","expected_intent":"human_handoff","tags":["v2","escalation"]},
+    {"case_id":"v2_intent_human_10","message":"转真人处理","expected_intent":"human_handoff","tags":["v2","short_query"]},
+
+    {"case_id":"v2_intent_aftersales_01","message":"买完以后遇到点问题，应该走哪种服务","expected_intent":"aftersales","tags":["v2","ambiguous"]},
+    {"case_id":"v2_intent_aftersales_02","message":"想先了解一下售后可以提供哪些帮助","expected_intent":"aftersales","tags":["v2","consultation"]},
+    {"case_id":"v2_intent_aftersales_03","message":"我还没决定要怎么处理，先咨询一下","expected_intent":"aftersales","tags":["v2","ambiguous"]},
+    {"case_id":"v2_intent_aftersales_04","message":"产品出了状况，不知道应该选哪个售后入口","expected_intent":"aftersales","tags":["v2","classification"]},
+    {"case_id":"v2_intent_aftersales_05","message":"购买后的服务流程一般是什么样","expected_intent":"aftersales","tags":["v2","procedure"]},
+    {"case_id":"v2_intent_aftersales_06","message":"先帮我判断该找哪一类售后支持","expected_intent":"aftersales","tags":["v2","classification"]},
+    {"case_id":"v2_intent_aftersales_07","message":"有个商品使用后的事项想问问","expected_intent":"aftersales","tags":["v2","consultation"]},
+    {"case_id":"v2_intent_aftersales_08","message":"我需要售后帮助，但目前信息不全","expected_intent":"aftersales","tags":["v2","missing_information"]},
+    {"case_id":"v2_intent_aftersales_09","message":"产品有点异常，下一步有哪些处理方向","expected_intent":"aftersales","tags":["v2","ambiguous"]},
+    {"case_id":"v2_intent_aftersales_10","message":"咨询一个通用的售后问题","expected_intent":"aftersales","tags":["v2","standard"]},
+
+    {"case_id":"v2_intent_greeting_01","message":"早呀，辛苦了","expected_intent":"greeting","tags":["v2","time"]},
+    {"case_id":"v2_intent_greeting_02","message":"hey there","expected_intent":"greeting","tags":["v2","english"]},
+    {"case_id":"v2_intent_greeting_03","message":"客服在吗","expected_intent":"greeting","tags":["v2","question"]},
+    {"case_id":"v2_intent_greeting_04","message":"嗨嗨","expected_intent":"greeting","tags":["v2","colloquial"]},
+    {"case_id":"v2_intent_greeting_05","message":"午安","expected_intent":"greeting","tags":["v2","time"]},
+    {"case_id":"v2_intent_greeting_06","message":"你好呀","expected_intent":"greeting","tags":["v2","colloquial"]},
+    {"case_id":"v2_intent_greeting_07","message":"请问有人吗","expected_intent":"greeting","tags":["v2","question"]},
+    {"case_id":"v2_intent_greeting_08","message":"good evening","expected_intent":"greeting","tags":["v2","english"]},
+    {"case_id":"v2_intent_greeting_09","message":"您好，打扰了","expected_intent":"greeting","tags":["v2","formal"]},
+    {"case_id":"v2_intent_greeting_10","message":"在不在呀","expected_intent":"greeting","tags":["v2","colloquial"]}
+  ],
+  "dialog_cases": [
+    {
+      "case_id":"v2_dialog_e201_complete","tags":["v2","diagnosis","tool_calling"],
+      "question":"FlowBuds Pro，序列号 FBP-CN-A10001，没有发热或漏液，充电仓不亮并显示 E201。",
+      "expected_agent":"diagnostic","expected_primary_agent":"diagnostic","expected_intent":"device_fault","expected_escalated":false,
+      "required_tools":["lookup_device","lookup_fault_code","run_device_diagnostic"],"forbidden_tools":["create_service_ticket"],
+      "expected_tool_sequence":["lookup_device","lookup_fault_code","run_device_diagnostic"],"tool_sequence_mode":"in_order",
+      "expected_all_tool_calls_success":true,"required_state_facts":{"device_verified":true,"diagnosis_status":"completed"},
+      "required_response_terms":["E201"],"max_response_chars":1000,
+      "reference_answer":"确认风险项被否定，核验设备和 E201，给出不超过三项低风险操作。","evidence":"E201 表示充电触点未稳定连接。"
+    },
+    {
+      "case_id":"v2_dialog_e301_complete","tags":["v2","diagnosis","cross_product"],
+      "question":"FlowClean S1，序列号 FCS-CN-C30003，没有烧焦味也没有冒烟，滚刷停转并报 E301。",
+      "expected_agent":"diagnostic","expected_primary_agent":"diagnostic","expected_intent":"device_fault","expected_escalated":false,
+      "required_tools":["lookup_device","lookup_fault_code","run_device_diagnostic"],"forbidden_tools":["create_service_ticket"],
+      "expected_tool_sequence":["lookup_device","lookup_fault_code","run_device_diagnostic"],"tool_sequence_mode":"in_order",
+      "expected_all_tool_calls_success":true,"required_state_facts":{"device_verified":true,"diagnosis_status":"completed"},
+      "required_response_terms":["E301"],"max_response_chars":1000,
+      "reference_answer":"核验 E301 后给出断电、清理可见缠绕物和自检步骤。","evidence":"E301 表示滚刷阻力超过安全阈值。"
+    },
+    {
+      "case_id":"v2_dialog_safety_contrast","tags":["v2","safety","negation_scope"],
+      "question":"耳机没有鼓包和漏液，但是已经有明显烧焦味。",
+      "expected_agent":"escalation","expected_primary_agent":"escalation","expected_intent":"device_fault","expected_escalated":true,
+      "expected_tool_sequence":[],"tool_sequence_mode":"strict","expected_question_group_count":0,
+      "forbidden_tools":["run_device_diagnostic","create_service_ticket"],"expected_plan_status":"handoff_required","expected_handoff_reason":"device_safety_risk",
+      "required_response_terms":["停止使用和充电","人工"],"forbidden_response_terms":["意图=","CRITICAL","已记录信息：{"],"max_response_chars":350,
+      "reference_answer":"虽然鼓包和漏液被否定，但烧焦味仍触发安全停止。","evidence":"烧焦味是独立高风险信号。"
+    },
+    {
+      "case_id":"v2_dialog_progressive_camera","tags":["v2","progressive_clarification","multi_turn","cross_product"],
+      "turns":["我家摄像头罢工了","没有这些危险情况","设备在线但是画面全黑"],
+      "turn_expectations":[
+        {"expected_agent":"intake","expected_intent":"device_fault","expected_tool_sequence":[],"tool_sequence_mode":"strict","expected_question_group_count":1,"expected_question_group":{"stage":"safety_check","type":"single_select","option_values":["有","没有","不确定"]},"expected_support_flow_stage":"safety_check","forbidden_tools":["lookup_device","run_device_diagnostic","create_service_ticket"],"max_response_chars":260,"reference_answer":"第一轮只做安全筛查。","evidence":"信息不足时先识别安全风险。"},
+        {"expected_agent":"intake","expected_intent":"device_fault","expected_tool_sequence":[],"tool_sequence_mode":"strict","expected_question_group_count":1,"expected_question_group":{"stage":"symptom","type":"multi_select","allow_text":true},"expected_support_flow_stage":"symptom","forbidden_tools":["lookup_device","run_device_diagnostic","create_service_ticket"],"max_response_chars":260,"reference_answer":"风险被否定后只询问故障表现。","evidence":"每轮只推进一组问题。"},
+        {"expected_agent":"intake","expected_intent":"device_fault","expected_tool_sequence":[],"tool_sequence_mode":"strict","expected_question_group_count":1,"expected_question_group":{"stage":"device_identity","type":"text","option_values":[]},"expected_support_flow_stage":"device_identity","forbidden_tools":["lookup_device","run_device_diagnostic","create_service_ticket"],"required_response_terms":["型号"],"max_response_chars":260,"reference_answer":"保存黑屏症状后只补设备身份。","evidence":"缺少设备身份时不能执行具体工具。"}
+      ],
+      "expected_agent":"intake","expected_intent":"device_fault","expected_support_flow_stage":"device_identity","max_response_chars":260,
+      "reference_answer":"依次完成安全、症状和设备身份澄清。","evidence":"渐进门控应跨设备泛化。"
+    },
+    {
+      "case_id":"v2_dialog_parts_missing_identity","tags":["v2","parts","clarification"],
+      "question":"我只想补一个充电盒，不需要维修整机。",
+      "expected_agent":"resolution","expected_intent":"parts_request","forbidden_tools":["create_service_ticket"],"expected_escalated":false,
+      "max_response_chars":700,"reference_answer":"识别配件诉求并补充设备型号或序列号，不承诺库存和费用。","evidence":"配件申请至少需要设备身份和配件类型。"
+    },
+    {
+      "case_id":"v2_dialog_warranty_known_order","tags":["v2","warranty","business_tool"],
+      "question":"只查保修：RF202609120003 对应的 FCS-CN-C30003 现在还在保吗？先别建单。",
+      "expected_agent":"resolution","expected_intent":"warranty_inquiry","required_tools":["lookup_order","check_warranty"],"forbidden_tools":["create_service_ticket"],
+      "required_state_facts":{"order_verified":true,"warranty_status":"in_warranty"},"required_response_terms":["2027-09-12"],"max_response_chars":800,
+      "reference_answer":"核验订单和保修截止日，不创建工单。","evidence":"该演示设备保修截止 2027-09-12。"
+    },
+    {
+      "case_id":"v2_dialog_ticket_existing_only","tags":["v2","ticket","negative_constraint"],
+      "question":"只查询 RF-T20261020-001，不要创建任何新工单。",
+      "expected_agent":"resolution","expected_intent":"ticket_status","required_tools":["get_service_ticket"],"forbidden_tools":["create_service_ticket"],
+      "required_response_terms":["等待寄出设备","等待用户寄出设备"],"forbidden_response_terms":["awaiting_shipment"],"max_response_chars":500,
+      "reference_answer":"把工单内部状态转成用户语言，只反馈现有工单下一步。","evidence":"该工单 next_action 为等待用户寄出设备。"
+    },
+    {
+      "case_id":"v2_dialog_human_no_false_claim","tags":["v2","handoff","truthfulness"],
+      "question":"不要再自动处理了，把对话交给人工继续。",
+      "expected_agent":"escalation","expected_intent":"human_handoff","expected_escalated":true,"expected_plan_status":"handoff_required","expected_handoff_reason":"user_requested_human",
+      "required_response_terms":["人工"],"forbidden_response_terms":["已转接成功","已经接通人工","CRITICAL"],"max_response_chars":300,
+      "reference_answer":"停止自动处理并说明已准备交接信息，但不声称接通真实坐席。","evidence":"演示环境没有真实人工队列。"
+    },
+    {
+      "case_id":"v2_dialog_repair_confirm","tags":["v2","multi_turn","write_confirmation"],
+      "turns":[
+        "订单 RF202610270001，设备 FBP-CN-A10001，FlowBuds Pro 左耳无声并报 E101，我要申请维修。",
+        "安全排查和三项低风险步骤都完成了，左耳还是没有声音，请准备维修工单。",
+        "同意提交这张维修工单。"
+      ],
+      "turn_expectations":[
+        {"expected_intent":"repair_request","forbidden_tools":["create_service_ticket"],"reference_answer":"核验事实并先完成诊断。","evidence":"提出维修不等于确认建单。"},
+        {"expected_intent":"repair_request","required_tools":["prepare_service_ticket"],"forbidden_tools":["create_service_ticket"],"expected_pending_action":true,"reference_answer":"保存诊断进度并准备待确认工单。","evidence":"写操作前必须形成 pending_action。"},
+        {"expected_intent":"repair_request","required_tools":["create_service_ticket"],"expected_pending_action":false,"required_state_facts":{"ticket_created":true,"ticket_status":"created"},"reference_answer":"明确确认后创建一次工单并返回工单号。","evidence":"同意提交是明确确认。"}
+      ],
+      "expected_intent":"repair_request","required_tools":["create_service_ticket"],"expected_pending_action":false,
+      "reference_answer":"维修链路在明确确认后完成模拟建单。","evidence":"写操作确认与幂等规则。"
+    },
+    {
+      "case_id":"v2_dialog_exchange_reject","tags":["v2","multi_turn","write_rejection"],
+      "turns":[
+        "RF202610270001，FBP-CN-A10001，左耳无声 E101，我想换货。",
+        "排查全部做完仍然无声，请准备换货服务单。",
+        "先算了，保留方案但不要提交。"
+      ],
+      "turn_expectations":[
+        {"expected_intent":"exchange_request","forbidden_tools":["create_service_ticket"],"reference_answer":"先诊断和核验，不直接建单。","evidence":"换货目标不等于确认。"},
+        {"expected_intent":"exchange_request","required_tools":["prepare_service_ticket"],"forbidden_tools":["create_service_ticket"],"expected_pending_action":true,"reference_answer":"准备工单并等待确认。","evidence":"写操作需要显式确认。"},
+        {"expected_intent":"exchange_request","forbidden_tools":["create_service_ticket"],"required_task_progress":{"ticket_created":false},"required_response_terms":["未创建","不会提交","不会执行"],"reference_answer":"识别拒绝，不创建工单并说明未执行。","evidence":"否定表达优先于提交关键词。"}
+      ],
+      "expected_intent":"exchange_request","forbidden_tools":["create_service_ticket"],
+      "reference_answer":"用户拒绝后保持未建单状态。","evidence":"拒绝路径不得触发写操作。"
+    },
+    {
+      "case_id":"v2_dialog_quality_complaint","tags":["v2","quality","boundary"],
+      "question":"同一个故障已经维修三次仍然复发，请登记质量投诉，不是再开普通维修。",
+      "expected_agent":"resolution","expected_intent":"quality_complaint","forbidden_tools":["create_service_ticket"],"max_response_chars":900,
+      "reference_answer":"识别质量投诉和多次维修事实，说明人工核验路径，不退回普通维修。","evidence":"多次维修无效属于质量与升级边界。"
+    },
+    {
+      "case_id":"v2_dialog_greeting_no_tools","tags":["v2","greeting","no_tool"],
+      "question":"你好呀，客服在吗？",
+      "expected_agent":"intake","expected_intent":"greeting","expected_tool_sequence":[],"tool_sequence_mode":"strict","expected_question_group_count":0,
+      "forbidden_tools":["lookup_device","lookup_order","search_knowledge_base","create_service_ticket"],"max_response_chars":300,
+      "reference_answer":"简短问候并询问需要什么售后帮助。","evidence":"纯问候不需要工具和业务状态。"
+    }
+  ]
+}

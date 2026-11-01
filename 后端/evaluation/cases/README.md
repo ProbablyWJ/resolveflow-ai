@@ -4,11 +4,20 @@
 
 `resolveflow_holdout_v1.json` 是独立收口集，包含 100 条平衡意图样本和 15 个对话场景。它不参与本轮 Prompt、路由规则或工具逻辑调参，只用于在开发集冻结后运行一次独立验证。
 
+`resolveflow_holdout_v2.json` 是 P0 修复后的第二套独立收口集，包含 100 条平衡意图样本、12 个对话场景和 18 轮。首次运行前必须冻结文件哈希；首次结果不得反向改题。v2 仍是团队构造的合成数据，不等同于真实用户分布。
+
 运行入口：
 
 ```json
 POST /eval/run
 {"dataset":"holdout"}
+```
+
+P0 修复后的 v2 首次运行使用：
+
+```json
+POST /eval/run
+{"dataset":"holdout_v2"}
 ```
 
 报告中的 `dataset_summary.suite_version` 必须为 `resolveflow-aftersales-holdout-v1.0`，不能与开发集 v1.3 的结果合并计算。

@@ -76,6 +76,19 @@ npm run dev
 
 开发预览为 `http://localhost:5173`，请求会代理到本地 Python API。
 
+## Render 公网演示
+
+仓库根目录的 `render.yaml` 定义了可复现的公开演示环境：
+
+- 一个 Docker Web Service 同时提供 Vue 页面与 FastAPI；
+- 一个 Render Key Value 保存多轮工作记忆；
+- ChromaDB 以内嵌模式加载演示知识库，保留真实 RAG 检索；
+- `demo` 模式关闭知识写入、Skills 热更新、在线全量评测和公共 Trace 列表，并对聊天请求限流。
+
+在 Render 中选择 **New → Blueprint**，连接本仓库并填写 `ANTHROPIC_API_KEY` 即可部署。模型 Key 只配置在 Render Secret 中，不写入仓库。
+
+免费实例适合简历展示，不等同于生产环境：长时间无访问会冷启动，Redis 与本地 Chroma 数据可能在重启后丢失；系统会自动重新加载演示知识库。
+
 ## 推荐演示脚本
 
 ### 主链路：三轮换货建单
@@ -120,7 +133,7 @@ npm run build
 
 2026-11-01 实测：
 
-- 后端 267 项自动化测试通过；
+- 后端 269 项自动化测试通过；
 - 前端 26 项测试通过，Vite 生产构建成功；
 - Docker 中 6 个服务全部健康，页面、API、Swagger 和统一网关均返回 200；
 - 评测集 v1.3 包含 60 条意图样本（10 类）和 14 个对话场景（21 轮），新增路由、工具顺序/参数、状态和问题组断言；

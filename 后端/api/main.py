@@ -5,6 +5,7 @@ ResolveFlow AI 售后决策与工单协同 Agent — FastAPI 入口
 所有核心组件在 lifespan 中初始化，通过环境变量配置。
 """
 import asyncio
+import hashlib
 import logging
 import os
 import pathlib
@@ -23,6 +24,7 @@ import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Response, UploadFile, File, Query, Request as HTTPRequest
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel, Field
 
@@ -58,6 +60,43 @@ from evaluation.jobs import EvaluationJobs
 from monitor.product_analytics import ProductAnalytics
 _eval_jobs = EvaluationJobs()
 _product_analytics = ProductAnalytics()
+_demo_rate_lock = asyncio.Lock()
+_demo_rate_hits: Dict[str, List[float]] = {}
+_demo_global_hits: List[float] = []
+
+
+def _demo_blocked(path: str, method: str) -> bool:
+    """Public portfolio demo exposes the user journey, not admin/write surfaces."""
+    if path in {"/metrics", "/trace/recent", "/skills/reload", "/eval/run", "/integrations/mcp/call"}:
+        return True
+    if path.startswith("/mcp"):
+        return True
+    if method != "GET" and path.startswith("/knowledge"):
+        return True
+    return False
+
+
+async def _demo_rate_limited(request: HTTPRequest) -> bool:
+    """Bound public LLM spend per client and globally on the single demo instance."""
+    forwarded = request.headers.get("x-forwarded-for", "")
+    client = (forwarded.split(",", 1)[0].strip() or (request.client.host if request.client else "unknown"))
+    client_key = hashlib.sha256(client.encode()).hexdigest()
+    now = time.time()
+    window = max(60, int(os.getenv("RESOLVEFLOW_DEMO_WINDOW_S", "3600")))
+    client_limit = max(1, int(os.getenv("RESOLVEFLOW_DEMO_CHAT_LIMIT", "12")))
+    global_limit = max(client_limit, int(os.getenv("RESOLVEFLOW_DEMO_GLOBAL_LIMIT", "300")))
+    cutoff = now - window
+    async with _demo_rate_lock:
+        global _demo_global_hits
+        _demo_global_hits = [stamp for stamp in _demo_global_hits if stamp > cutoff]
+        hits = [stamp for stamp in _demo_rate_hits.get(client_key, []) if stamp > cutoff]
+        if len(hits) >= client_limit or len(_demo_global_hits) >= global_limit:
+            _demo_rate_hits[client_key] = hits
+            return True
+        hits.append(now)
+        _demo_rate_hits[client_key] = hits
+        _demo_global_hits.append(now)
+    return False
 
 def _anthropic_cfg() -> Dict[str, Any]:
     key = os.getenv("ANTHROPIC_API_KEY", "")
@@ -262,6 +301,15 @@ app.add_middleware(
 async def access_control(request: HTTPRequest, call_next):
     from core.access import identity
     from fastapi.responses import JSONResponse
+    demo_mode = os.getenv("RESOLVEFLOW_ENV", "development").lower() == "demo"
+    if demo_mode and _demo_blocked(request.url.path, request.method):
+        return JSONResponse({"detail": "公开演示环境未开放该管理接口"}, status_code=403)
+    if demo_mode and request.url.path == "/chat" and request.method == "POST" and await _demo_rate_limited(request):
+        return JSONResponse(
+            {"detail": "公开演示请求已达到当前限额，请稍后再试"},
+            status_code=429,
+            headers={"Retry-After": os.getenv("RESOLVEFLOW_DEMO_WINDOW_S", "3600")},
+        )
     try:
         account = identity(request.headers.get("authorization", ""))
     except (ValueError, TypeError):
@@ -987,6 +1035,16 @@ async def _cli():
         await bridge.close()
         await manager._client.close()
         await mem.close()
+
+
+# Render 的单服务演示模式：API 路由优先匹配，其他路径由已构建的前端接管。
+_static_dir = os.getenv("RESOLVEFLOW_STATIC_DIR", "").strip()
+if _static_dir:
+    static_path = pathlib.Path(_static_dir)
+    if static_path.is_dir():
+        app.mount("/", StaticFiles(directory=str(static_path), html=True), name="web")
+    else:
+        logger.warning("RESOLVEFLOW_STATIC_DIR 不存在: %s", static_path)
 
 
 if __name__ == "__main__":

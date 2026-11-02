@@ -1,0 +1,56 @@
+services:
+  - type: web
+    name: resolveflow-ai-demo
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: main
+    dockerfilePath: ./deploy/Dockerfile.render
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ANTHROPIC_MODEL
+        value: deepseek-v4-pro
+      - key: ANTHROPIC_BASE_URL
+        value: https://api.deepseek.com/anthropic
+      - key: APP_ENV
+        value: production
+      - key: RESOLVEFLOW_ENV
+        value: demo
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: resolveflow-ai-cache
+          property: connectionString
+      - key: CHROMA_HOST
+        value: 127.0.0.1
+      - key: CHROMA_PORT
+        value: "9"
+      - key: CHROMA_PERSIST_DIRECTORY
+        value: /tmp/resolveflow-chroma
+      - key: RESOLVEFLOW_SEED_DEMO_DOCS
+        value: "true"
+      - key: RESOLVEFLOW_SKILLS_DIR
+        value: /app/skills
+      - key: INTENT_EMBEDDING_PROVIDER
+        value: local
+      - key: MCP_EXTERNAL_ENABLED
+        value: "false"
+      - key: RESOLVEFLOW_DEMO_CHAT_LIMIT
+        value: "12"
+      - key: RESOLVEFLOW_DEMO_GLOBAL_LIMIT
+        value: "300"
+      - key: RESOLVEFLOW_DEMO_WINDOW_S
+        value: "3600"
+      - key: WEB_CONCURRENCY
+        value: "1"
+
+  - type: keyvalue
+    name: resolveflow-ai-cache
+    plan: free
+    region: singapore
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []

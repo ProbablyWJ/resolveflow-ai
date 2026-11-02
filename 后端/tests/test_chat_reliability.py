@@ -75,6 +75,19 @@ def body(message="退款规则", request_id="one", conv_id="c"):
 
 
 @pytest.mark.asyncio
+async def test_episodic_history_never_falls_back_to_another_conversation():
+    memory = MemoryManager.__new__(MemoryManager)
+    memory._query_episodic = AsyncMock(return_value={"documents": [["当前会话历史"]]})
+
+    history = await memory._search_episodic("u", "current-conv", "质量投诉")
+
+    assert history == ["当前会话历史"]
+    memory._query_episodic.assert_awaited_once()
+    where = memory._query_episodic.await_args.kwargs["where"]
+    assert {"conv_id": "current-conv"} in where["$and"]
+
+
+@pytest.mark.asyncio
 async def test_failed_turn_can_retry_after_recovery_without_duplicate_history(services):
     memory, orch, model, http = services
     model.messages.create.side_effect = RuntimeError("provider down")

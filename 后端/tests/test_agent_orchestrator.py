@@ -147,7 +147,7 @@ def test_information_readiness_gate_clarifies_vague_fault_progressively_without_
     assert first_req.conversation_state["support_flow"]["stage"] == "safety_check"
 
     second_req = Request(
-        message="没有",
+        message="没有这些危险情况",
         user_id="u1",
         conv_id="clarify-1",
         intent=IntentCategory.OTHER,
@@ -250,6 +250,56 @@ def test_information_readiness_gate_is_device_agnostic_and_does_not_expose_diagn
         assert all(term in result.response for term in ("有", "没有", "不确定"))
         assert not any(term in result.response for term in ("当前判断", "实际依据", "验证方式", "序列号", "故障码"))
         assert result.routing_reason.startswith("information_readiness_gate")
+
+
+def test_explicit_ticket_rejection_records_a_structured_not_created_result():
+    from collections import deque
+
+    orchestrator = AgentOrchestrator.__new__(AgentOrchestrator)
+    orchestrator._recent_tool_traces = deque(maxlen=20)
+    orchestrator._composer = ResponseComposer(None, "unused")
+    state = {
+        "domain": "aftersales",
+        "task_id": "exchange-task",
+        "intent": "exchange_request",
+        "entities": {"order_id": ["RF202610270001"]},
+        "facts": {"recommended_resolution": "manual_exchange_review"},
+        "task_progress": {"troubleshooting_completed": True, "issue_persists": True},
+        "pending_action": {
+            "type": "create_service_ticket",
+            "ticket_type": "exchange",
+            "action_id": "prepare-exchange-task",
+            "status": "awaiting_user_confirmation",
+        },
+        "resolution_plan": {
+            "goal": "prepare_exchange",
+            "status": "awaiting_action",
+            "steps": [],
+            "next_step": "execute",
+            "missing_fields": [],
+        },
+    }
+    req = Request(
+        message="先算了，保留方案但不要提交。",
+        user_id="u1",
+        conv_id="reject-ticket",
+        request_id="reject-request",
+        intent=IntentCategory.HUMAN_HANDOFF,
+        intent_group="other",
+        urgency=UrgencyLevel.LOW,
+        entities={},
+        conversation_state=state,
+    )
+
+    result = asyncio.run(orchestrator.run(req))
+
+    assert result.intent is IntentCategory.EXCHANGE_REQUEST
+    assert result.tools_used == []
+    assert result.task_state["pending_action"]["status"] == "awaiting_user_confirmation"
+    assert result.task_state["task_progress"]["ticket_created"] is False
+    assert result.task_state["task_progress"]["ticket_submission_rejected"] is True
+    assert result.task_state["last_action_decision"]["decision"] == "rejected"
+    assert "不会执行建单" in result.response
 
 
 def test_active_clarification_does_not_capture_an_explicit_new_business_intent():
@@ -388,6 +438,63 @@ def test_safety_risk_detection_is_negation_aware():
         "没有鼓包，但有烧焦味",
         IntentCategory.DEVICE_FAULT,
     ) is UrgencyLevel.CRITICAL
+
+
+def test_cross_product_display_symptom_advances_to_device_identity():
+    from core.support_flow import advance_device_support_flow
+
+    state = {}
+    advance_device_support_flow(
+        state,
+        message="我家摄像头罢工了",
+        intent="device_fault",
+        urgency="LOW",
+        request_id="camera-start",
+    )
+    advance_device_support_flow(
+        state,
+        message="没有这些危险情况",
+        intent="device_fault",
+        urgency="LOW",
+        request_id="camera-safe",
+    )
+    decision = advance_device_support_flow(
+        state,
+        message="设备在线但是画面全黑",
+        intent="device_fault",
+        urgency="LOW",
+        request_id="camera-symptom",
+    )
+
+    assert decision.stage == "device_identity"
+    assert state["support_flow"]["symptom_category"] == "display"
+    assert state["entities"]["fault_symptom"] == ["设备在线但是画面全黑"]
+
+
+def test_quality_complaint_missing_fields_stop_before_agent_and_return_component():
+    from collections import deque
+
+    orchestrator = AgentOrchestrator.__new__(AgentOrchestrator)
+    orchestrator._composer = ResponseComposer.__new__(ResponseComposer)
+    orchestrator._recent_tool_traces = deque(maxlen=20)
+    req = Request(
+        message="同一个故障已经维修三次仍然复发，请登记质量投诉，不是再开普通维修。",
+        user_id="u1",
+        conv_id="quality-gate",
+        intent=IntentCategory.QUALITY_COMPLAINT,
+        intent_group="aftersales",
+        urgency=UrgencyLevel.LOW,
+        entities={},
+        conversation_state={},
+    )
+
+    result = asyncio.run(orchestrator.run(req))
+
+    assert result.primary_agent is AgentType.INTAKE
+    assert result.tools_used == []
+    assert result.question_group["stage"] == "collect_order_id"
+    assert "质量投诉" in result.response
+    assert "普通维修" in result.response
 
 
 def test_safety_entity_extraction_does_not_turn_negation_into_positive_fact():

@@ -45,6 +45,7 @@ from core.intent_recognizer import IntentCategory, IntentRecognizer, UrgencyLeve
 from core.llm_utils import extract_text_content
 from core.support_flow import (
     advance_device_support_flow,
+    build_missing_field_question_group,
     detect_safety_risks,
     is_active_support_flow,
     mark_support_flow_safety_risk,
@@ -955,7 +956,7 @@ class ResponseComposer:
                 }.get(pending.get("ticket_type"), "售后")
                 if (state.get("last_action_decision") or {}).get("decision") == "rejected":
                     lines.append(
-                        f"已按你的要求保留{ticket_type}方案，工单尚未创建，本次不会执行建单。"
+                        f"已按你的要求保留{ticket_type}方案，工单未创建，本次不会提交，也不会执行建单。"
                         "如果之后改变决定，可再明确回复“确认创建工单”。"
                     )
                 else:
@@ -1016,7 +1017,17 @@ class ResponseComposer:
         }
         missing = plan.get("missing_fields", [])
         if missing:
-            return f"还需要补充{'、'.join(field_labels.get(name, name) for name in missing)}，收到后我再继续处理。"
+            # 用户端每轮只推进一个问题，避免把内部字段清单一次性抛给用户。
+            first_missing = missing[0]
+            if state.get("intent") == "quality_complaint":
+                if first_missing == "order_id":
+                    return (
+                        "我已按质量投诉记录，不会当作普通维修处理。"
+                        "请先提供与这三次维修对应的订单号。"
+                    )
+                if first_missing == "fault_symptom":
+                    return "订单信息已记录。请再描述本次复发的具体故障现象。"
+            return f"请先补充{field_labels.get(first_missing, first_missing)}，收到后我再继续处理。"
         return "信息已经记录，请确认是否继续下一步。"
 
     @staticmethod
@@ -1122,7 +1133,7 @@ class ResponseComposer:
             ticket_type = ticket_type_labels.get(pending.get("ticket_type"), "售后")
             if (state.get("last_action_decision") or {}).get("decision") == "rejected":
                 lines.append(
-                    f"已按你的要求保留{ticket_type}方案，工单尚未创建，本次不会执行建单。"
+                    f"已按你的要求保留{ticket_type}方案，工单未创建，本次不会提交，也不会执行建单。"
                     "如果之后改变决定，可再明确回复“确认创建工单”。"
                 )
             else:
@@ -1401,6 +1412,12 @@ class AgentOrchestrator:
                     "action_type": "create_service_ticket",
                     "request_id": req.request_id,
                 }
+                # 拒绝也是一个需要被明确记录的任务结果。保留已准备的方案，
+                # 但写入“未建单”事实，避免下游只能从缺失字段推测是否执行。
+                progress = req.conversation_state.setdefault("task_progress", {})
+                progress["ticket_created"] = False
+                progress["ticket_submission_rejected"] = True
+                progress["source_request_id"] = req.request_id
                 result = OrchestratorResult(
                     request_id=req.request_id,
                     response=self._composer._compose_aftersales_state(req.conversation_state, req.message),
@@ -1470,6 +1487,36 @@ class AgentOrchestrator:
                     retryable=False,
                     task_state=dict(req.conversation_state),
                     question_group=clarification.question_group,
+                )
+                self._record_tool_trace(result)
+                return result
+
+            # 质量投诉在必要业务字段缺失时，先由确定性门控每轮收集一项。
+            # 不让诊断 Agent 从历史上下文猜测设备或故障，也避免过早调用 RAG。
+            missing_group = build_missing_field_question_group(
+                req.conversation_state, request_id=req.request_id,
+            )
+            if req.intent == IntentCategory.QUALITY_COMPLAINT and missing_group is not None:
+                result = OrchestratorResult(
+                    request_id=req.request_id,
+                    response=self._composer._compose_aftersales_state(
+                        req.conversation_state, req.message,
+                    ),
+                    agent_type=AgentType.INTAKE,
+                    intent=req.intent,
+                    escalated=False,
+                    latency_ms=(time.monotonic() - t0) * 1000,
+                    agent_types=[AgentType.INTAKE],
+                    primary_agent=AgentType.INTAKE,
+                    supporting_agents=[],
+                    tools_used=[],
+                    tool_traces=[],
+                    routing_reason="information_readiness_gate: quality_complaint_missing_field",
+                    routing_confidence=1.0,
+                    status="success",
+                    retryable=False,
+                    task_state=dict(req.conversation_state),
+                    question_group=missing_group,
                 )
                 self._record_tool_trace(result)
                 return result
@@ -1565,6 +1612,9 @@ class AgentOrchestrator:
             retryable=not response.success and all(attempt.get("retry_safe", False) for attempt in req.tool_attempts),
             error_code=response.error_code if not response.success else None,
             task_state=dict(req.conversation_state or {}),
+            question_group=build_missing_field_question_group(
+                req.conversation_state, request_id=req.request_id,
+            ),
         )
         self._record_tool_trace(result)
         return result

@@ -31,7 +31,10 @@ _SYMPTOM_PATTERNS = (
     ("connectivity", re.compile(r"连不上|无法连接|连接失败|断连|蓝牙(?:搜不到|找不到|连接异常)|网络连接异常")),
     ("charging", re.compile(r"无法充电|充不进(?:去)?电|充不上电|充电失败|充电没反应|不充电|掉电|续航")),
     ("power", re.compile(r"开不了机|无法开机|不开机|开机没反应|自动关机|重启")),
-    ("display", re.compile(r"黑屏|花屏|闪屏|屏幕|显示异常")),
+    (
+        "display",
+        re.compile(r"黑屏|花屏|闪屏|屏幕|显示异常|画面(?:全黑|一片黑|显示不出来)|没有画面|无画面"),
+    ),
     ("input", re.compile(r"键盘|触摸|按键|鼠标|控制失灵")),
     ("performance", re.compile(r"卡顿|发热|过热|异常发热|变慢|崩溃|闪退")),
 )
@@ -46,7 +49,12 @@ _SAFETY_RISK_ALIASES = (
     ("异常发热", ("异常高温", "异常发热", "明显发烫", "发烫", "烫手")),
     ("人身伤害", ("烫伤", "人身伤害")),
 )
-_SAFETY_CLEAR = re.compile(r"^(?:没有|无|都没有|不存在|不发热|没冒烟|没有这些)[。！！!\s]*$")
+_SAFETY_CLEAR = re.compile(
+    r"^(?:没有|无|都没有|不存在|不发热|没冒烟|"
+    r"没有这些(?:危险|安全)?(?:情况|异常|现象|风险)?|"
+    r"上述(?:危险|安全)?(?:情况|异常|现象|风险)?都没有)"
+    r"[。！！!\s]*$"
+)
 _SAFETY_UNCERTAIN = re.compile(r"不确定|不知道|看不出|不清楚")
 _SAFETY_YES = re.compile(r"^(?:有|是|是的|有这种情况)[。！！!\s]*$")
 _UNKNOWN_DEVICE = re.compile(r"不知道|看不到|不清楚|没有型号|找不到")
@@ -298,6 +306,43 @@ def build_question_group(
         })
         return base
     return {}
+
+
+def build_missing_field_question_group(
+    state: Any, *, request_id: str
+) -> Optional[Dict[str, Any]]:
+    """将任务计划中的第一个缺失字段转成前端可渲染的单问组件。
+
+    这里不会一次向用户展示全部内部字段；完成当前字段后，
+    下一轮再根据新状态生成下一个问题。
+    """
+    if not isinstance(state, dict) or state.get("domain") != "aftersales":
+        return None
+    plan = state.get("resolution_plan") if isinstance(state.get("resolution_plan"), dict) else {}
+    missing = plan.get("missing_fields") if isinstance(plan.get("missing_fields"), list) else []
+    if plan.get("status") != "collecting_information" or not missing:
+        return None
+    field = str(missing[0])
+    copy = {
+        "order_id": ("请输入订单号", "例如：RF202610270001"),
+        "serial_number": ("请输入设备序列号", "请查看设备本体或包装标签"),
+        "product_model": ("请输入产品型号", "例如：FlowBuds Pro"),
+        "fault_symptom": ("请描述具体故障现象", "例如：左耳没有声音"),
+        "fault_code": ("请输入故障码", "例如：E101"),
+        "ticket_id": ("请输入工单号", "例如：RF-T20261020-001"),
+    }
+    prompt, placeholder = copy.get(field, (f"请补充{field}", "请输入"))
+    return {
+        "id": f"{request_id}:collect_{field}",
+        "stage": f"collect_{field}",
+        "type": "text",
+        "prompt": prompt,
+        "options": [],
+        "required": True,
+        "allow_text": True,
+        "text_placeholder": placeholder,
+        "submit_label": "提交",
+    }
 
 
 def _clarification(

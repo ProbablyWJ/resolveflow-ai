@@ -356,6 +356,18 @@ def prepare_service_ticket(req: Request, args: Dict[str, Any]) -> Dict[str, Any]
     if not state["facts"].get("recommended_resolution"):
         _replan(req, "prepare_ticket", "尚未形成售后方案", "decide")
         return {"success": False, "error": "需要先形成售后方案"}
+    if ticket_type in {"repair", "exchange"}:
+        progress = state.get("task_progress") or {}
+        if not (
+            progress.get("troubleshooting_completed") is True
+            and progress.get("issue_persists") is True
+        ):
+            _replan(req, "prepare_ticket", "尚未确认低风险排查完成且故障持续", "diagnose")
+            return {
+                "success": False,
+                "prepared": False,
+                "error": "需要先确认低风险排查已经完成且故障仍然存在",
+            }
     action_id = f"prepare-{state['task_id']}"
     action = {
         "action_id": action_id,

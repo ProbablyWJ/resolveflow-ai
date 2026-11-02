@@ -277,6 +277,48 @@ class IntentRecognizer:
             source_scores["business_rule"] = 1.0
             return IntentCategory.DEVICE_FAULT, max(confidence, 0.99)
 
+        # 明确的业务目标优先于弱关键词。这些表达不需要模型猜测，
+        # 且能在 LLM 超时时稳定兜底。
+        if re.fullmatch(r"(?:你好[，,。！!\s]*)?(?:在吗|有人在吗|客服在吗)[？?。！!\s]*", text):
+            source_scores["business_rule"] = 1.0
+            return IntentCategory.GREETING, max(confidence, 0.95)
+
+        quality_feedback = bool(
+            re.search(r"质量.{0,8}(?:反馈|投诉)|(?:反馈|投诉).{0,8}质量", text)
+            or re.search(
+                r"(?:重复|反复|多次|一直).{0,30}"
+                r"(?:没解决|不解决|仍复发|还是复发).{0,16}(?:反馈|投诉)",
+                text,
+            )
+        )
+        if quality_feedback:
+            source_scores["business_rule"] = 1.0
+            return IntentCategory.QUALITY_COMPLAINT, max(confidence, 0.95)
+
+        exchange_eligibility = bool(
+            re.search(r"(?:换货|换新|换机|整机更换|置换).{0,10}(?:资格|条件|政策|能否|是否可以)", text)
+            or re.search(r"(?:资格|条件|政策).{0,10}(?:换货|换新|换机|置换)", text)
+        )
+        if exchange_eligibility:
+            source_scores["business_rule"] = 1.0
+            return IntentCategory.EXCHANGE_REQUEST, max(confidence, 0.95)
+
+        explicit_repair_service = bool(
+            re.search(r"(?:付费|上门|预约|官方).{0,12}(?:维修|检修|修理|寄修|返修|送修)", text)
+            or re.search(r"(?:维修|检修|修理|寄修|返修|送修).{0,12}(?:付费|上门|预约|地址|步骤|流程|在哪|哪里|官方)", text)
+        )
+        if explicit_repair_service:
+            source_scores["business_rule"] = 1.0
+            return IntentCategory.REPAIR_REQUEST, max(confidence, 0.95)
+
+        specific_warranty_duration = re.search(
+            r"(?:配件|电池|整机|主机|设备).{0,12}(?:保多久|保多长|质保多久|保修多久)",
+            text,
+        )
+        if specific_warranty_duration:
+            source_scores["business_rule"] = 1.0
+            return IntentCategory.WARRANTY_INQUIRY, max(confidence, 0.95)
+
         # 明确售后工单号 + 进度语义是高精度业务键；当 LLM 超时时
         # 也应稳定落到查工单，而不是被“没更新”误判为设备故障。
         progress_language = re.search(r"进度|状态|更新|到哪|哪一步|查询|查下|看下|处理到", text)
@@ -310,8 +352,8 @@ class IntentRecognizer:
             source_scores["business_rule"] = 1.0
             return IntentCategory.WARRANTY_INQUIRY, max(confidence, 0.95)
 
-        repair_terms = ("维修", "报修", "寄修", "返修", "送修")
-        exchange_terms = ("换货", "换新", "换机", "更换设备", "置换")
+        repair_terms = ("维修", "报修", "寄修", "返修", "送修", "检修", "修理")
+        exchange_terms = ("换货", "换新", "换机", "更换设备", "整机更换", "置换")
         parts_terms = ("配件", "补发", "耳帽", "电源线", "数据线", "滚刷", "过滤网", "底座", "充电盒")
         fault_terms = ("连不上", "连接失败", "无声", "没声音", "无法充电", "故障")
         has_repair = any(term in text for term in repair_terms)
@@ -324,8 +366,23 @@ class IntentRecognizer:
             source_scores["business_rule"] = 1.0
             return IntentCategory.AFTERSALES, max(confidence, 0.90)
 
-        exchange_negated = bool(re.search(r"(?:不想|不要|先别|暂不|不考虑).{0,6}(?:办|申请|做)?(?:换货|换新|换机)", text))
-        repair_negated = bool(re.search(r"(?:不想|不要|先别|暂不|不考虑).{0,6}(?:办|申请|做)?(?:维修|报修|寄修|整机维修)", text))
+        # 否定范围不跨越逗号/句号，避免把“不要维修，我要换货”
+        # 错解为“不要换货”。
+        exchange_negated = bool(re.search(
+            r"(?:不是|不想|不要|先别|暂不|不考虑)"
+            r"[^，,。；;！!？?]{0,8}(?:办|申请|做)?(?:换货|换新|换机|置换)",
+            text,
+        ))
+        repair_negated = bool(re.search(
+            r"(?:不是|不想|不要|先别|暂不|不考虑)"
+            r"[^，,。；;！!？?]{0,8}(?:办|申请|做)?(?:维修|报修|寄修|整机维修)",
+            text,
+        ))
+        parts_negated = bool(re.search(
+            r"(?:不是|不要|先别|暂不|只不)"
+            r"[^，,。；;！!？?]{0,10}(?:补|申请|更换)?(?:配件|耳帽|滚刷|过滤网|底座|数据线|充电盒)",
+            text,
+        ))
         if has_fault and exchange_negated:
             source_scores["business_rule"] = 1.0
             return IntentCategory.DEVICE_FAULT, max(confidence, 0.95)
@@ -342,7 +399,7 @@ class IntentRecognizer:
             source_scores["business_rule"] = 1.0
             return IntentCategory.REPAIR_REQUEST, max(confidence, 0.95)
 
-        if has_parts and (
+        if has_parts and not parts_negated and (
             repair_negated
             or re.search(r"(?:申请|补|配|换|需要|只要|只需要|想要|入口|资料|流程).{0,12}(?:配件|耳帽|滚刷|过滤网|底座|数据线|充电盒)", text)
             or re.search(r"(?:配件|耳帽|滚刷|过滤网|底座|数据线|充电盒).{0,12}(?:申请|补|配|换|需要|入口|资料|流程|吗)", text)
@@ -363,11 +420,15 @@ class IntentRecognizer:
             r"(?:设备|商品|东西|東西).{0,10}(?:有点问题|不太对|怎么处理)",
             text,
         )
+        post_purchase_question = re.search(
+            r"(?:设备|商品|产品).{0,12}(?:使用后|购买后|售后).{0,12}(?:事项|问题|想问|咨询)",
+            text,
+        )
         ambiguous_service = re.search(
             r"(?:不知道|不确定).{0,12}(?:报修|维修|换货|配件).{0,12}(?:还是|或|或者|其他)",
             text,
         )
-        if broad_aftersales or ambiguous_service:
+        if broad_aftersales or post_purchase_question or ambiguous_service:
             source_scores["business_rule"] = 1.0
             return IntentCategory.AFTERSALES, max(confidence, 0.90)
         return intent, confidence

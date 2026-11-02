@@ -70,6 +70,10 @@ CMD ["python", "-m", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "
 # ── 阶段 4：开发镜像 ──────────────────────────────────────────────────────────
 FROM dependencies AS development
 
+# 开发镜像需要包含测试依赖；生产镜像仍保持精简。
+COPY requirements-dev.txt .
+RUN pip install -r requirements-dev.txt
+
 COPY . .
 
 RUN mkdir -p /app/data/chroma /app/logs /app/config /app/tests && \

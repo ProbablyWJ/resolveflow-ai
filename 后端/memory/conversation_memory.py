@@ -3,7 +3,7 @@
 
 三级记忆架构，模拟人类记忆机制：
   1. 工作记忆（Redis）—— 当前会话的最近 N 条消息，毫秒级读写
-  2. 情景记忆（ChromaDB）—— 跨会话的历史对话，按语义相似度检索
+  2. 情景记忆（ChromaDB）—— 同一会话的历史片段，按语义相似度检索
   3. 用户画像（ChromaDB）—— 从对话中提炼的长期偏好和实体
 
 关键设计：
@@ -295,7 +295,7 @@ class MemoryManager:
 
         recent = await self._get_working_memory(user_id, conv_id)
 
-        # 2. 情景记忆（跨会话语义检索）
+        # 2. 情景记忆（仅在当前会话内语义检索）
         history = await self._search_episodic(
             user_id,
             conv_id,
@@ -402,15 +402,9 @@ class MemoryManager:
                 n_results=self.HISTORY_TOP_K,
                 where={"$and": [{"user_id": self._safe_text(user_id)}, {"conv_id": self._safe_text(conv_id)}]},
             )
-            docs = self._extract_docs(results)
-            if len(docs) < self.HISTORY_TOP_K:
-                fallback = await self._query_episodic(
-                    query_text,
-                    n_results=self.HISTORY_TOP_K,
-                    where={"user_id": self._safe_text(user_id)},
-                )
-                docs.extend(self._extract_docs(fallback))
-            return self._dedupe_texts(docs)[: self.HISTORY_TOP_K]
+            # 不向同一用户的其他 conv_id 降级检索：历史任务不是当前事实证据。
+            # 跨会话稳定信息仍由单独的用户画像层提供。
+            return self._dedupe_texts(self._extract_docs(results))[: self.HISTORY_TOP_K]
         except Exception as ex:
             logger.warning(f"情景记忆检索失败: {ex}")
             return []

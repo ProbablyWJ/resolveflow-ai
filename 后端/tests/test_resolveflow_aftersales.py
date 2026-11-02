@@ -24,6 +24,7 @@ from agents.tools import (
 from core.action_confirmation import is_explicit_ticket_confirmation, is_explicit_ticket_rejection
 from core.conversation_state import merge_state
 from core.intent_recognizer import IntentCategory, IntentRecognizer, UrgencyLevel
+from core.support_flow import build_missing_field_question_group
 
 
 def make_request(message="耳机左耳没声音，我想换货", intent=IntentCategory.EXCHANGE_REQUEST):
@@ -102,6 +103,35 @@ def test_explicit_send_for_repair_has_deterministic_intent_fallback():
 
     assert intent is IntentCategory.REPAIR_REQUEST
     assert confidence == 0.95
+    assert scores["business_rule"] == 1.0
+
+
+@pytest.mark.parametrize(("message", "expected"), [
+    ("售后更换的配件单独保多久", IntentCategory.WARRANTY_INQUIRY),
+    ("这个设备支持预约上门维修吗", IntentCategory.REPAIR_REQUEST),
+    ("耳机进过水还能送官方检修吗", IntentCategory.REPAIR_REQUEST),
+    ("官方寄修地址和步骤在哪里看", IntentCategory.REPAIR_REQUEST),
+    ("请准备维修申请，不是换货申请", IntentCategory.REPAIR_REQUEST),
+    ("已经过保了还能付费维修吗", IntentCategory.REPAIR_REQUEST),
+    ("这次不要维修，我要申请换货", IntentCategory.EXCHANGE_REQUEST),
+    ("我想申请整机更换，不是补一个配件", IntentCategory.EXCHANGE_REQUEST),
+    ("只查询换货资格，暂时不要提交售后单", IntentCategory.EXCHANGE_REQUEST),
+    ("售后一直重复让我重置却不解决，我要反馈", IntentCategory.QUALITY_COMPLAINT),
+    ("先做质量反馈，不是申请普通维修", IntentCategory.QUALITY_COMPLAINT),
+    ("商品使用后的事项想问问", IntentCategory.AFTERSALES),
+    ("客服在吗", IntentCategory.GREETING),
+])
+def test_business_goal_rules_cover_paraphrases_and_negative_boundaries(message, expected):
+    scores = {}
+    intent, confidence = IntentRecognizer._apply_high_precision_business_rules(
+        message,
+        IntentCategory.OTHER,
+        0.10,
+        scores,
+    )
+
+    assert intent is expected
+    assert confidence >= 0.90
     assert scores["business_rule"] == 1.0
 
 
@@ -271,10 +301,14 @@ def test_ticket_requires_explicit_confirmation_and_is_idempotent():
     assert check_warranty(request, {})["success"] is True
     assert run_device_diagnostic(request, {})["success"] is True
     assert recommend_resolution(request, {"desired_action": "exchange"})["success"] is True
+    request.conversation_state["task_progress"] = {
+        "troubleshooting_completed": True,
+        "issue_persists": True,
+    }
     prepared = prepare_service_ticket(request, {"ticket_type": "exchange"})
     action_id = prepared["pending_action"]["action_id"]
     pending_answer = ResponseComposer._compose_aftersales_state(request.conversation_state)
-    assert "已准备换货演示工单" in pending_answer
+    assert "已根据你的排查结果准备换货演示工单" in pending_answer
     assert "exchange" not in pending_answer
     progress_answer = ResponseComposer._compose_aftersales_state(
         request.conversation_state,
@@ -307,10 +341,42 @@ def test_ticket_requires_explicit_confirmation_and_is_idempotent():
     assert "created" not in completed_answer
 
 
+@pytest.mark.parametrize("ticket_type", ["repair", "exchange"])
+def test_repair_and_exchange_ticket_preparation_waits_for_troubleshooting_result(ticket_type):
+    intent = (
+        IntentCategory.REPAIR_REQUEST
+        if ticket_type == "repair"
+        else IntentCategory.EXCHANGE_REQUEST
+    )
+    request = make_request(intent=intent)
+    lookup_order(request, {})
+    lookup_device(request, {})
+    check_warranty(request, {})
+    run_device_diagnostic(request, {})
+    recommend_resolution(request, {"desired_action": ticket_type})
+
+    blocked = prepare_service_ticket(request, {"ticket_type": ticket_type})
+
+    assert blocked["success"] is False
+    assert blocked["prepared"] is False
+    assert request.conversation_state.get("pending_action") is None
+
+    request.conversation_state["task_progress"] = {
+        "troubleshooting_completed": True,
+        "issue_persists": True,
+    }
+    prepared = prepare_service_ticket(request, {"ticket_type": ticket_type})
+
+    assert prepared["success"] is True
+    assert prepared["pending_action"]["ticket_type"] == ticket_type
+
+
 @pytest.mark.parametrize("message", [
     "确认创建工单",
     "我确认创建售后工单。",
     "同意提交工单",
+    "同意提交这张维修工单。",
+    "同意提交该换货工单。",
     "请立即办理售后工单",
     "我确认提交这张工单。",
 ])
@@ -386,15 +452,17 @@ def test_user_reported_troubleshooting_progress_persists_across_confirmation_tur
     check_warranty(request, {})
     run_device_diagnostic(request, {})
     recommend_resolution(request, {"desired_action": "exchange"})
-    prepare_service_ticket(request, {"ticket_type": "exchange"})
 
     progressed = merge_state(
         request.conversation_state, {}, "aftersales",
         "三项低风险步骤已经完成，左耳仍然无声。",
         "turn-progress", intent="exchange_request",
     )
+    request.conversation_state = progressed
+    request.entities = progressed["entities"]
+    prepare_service_ticket(request, {"ticket_type": "exchange"})
     confirmed = merge_state(
-        progressed, {}, "aftersales", "确认创建工单。",
+        request.conversation_state, {}, "aftersales", "确认创建工单。",
         "turn-confirm", intent="exchange_request",
     )
     answer = ResponseComposer._compose_aftersales_state(confirmed, "确认创建工单。")
@@ -421,6 +489,44 @@ def test_colloquial_troubleshooting_progress_is_saved():
 
     assert progressed["task_progress"]["troubleshooting_completed"] is True
     assert progressed["task_progress"]["issue_persists"] is True
+
+
+def test_troubleshooting_progress_accepts_completed_steps_and_no_sound_paraphrase():
+    progressed = merge_state(
+        make_request().conversation_state,
+        {},
+        "aftersales",
+        "安全排查和三项低风险步骤都完成了，左耳还是没有声音，请准备维修工单。",
+        "turn-v2-progress",
+        intent="repair_request",
+    )
+
+    assert progressed["task_progress"]["troubleshooting_completed"] is True
+    assert progressed["task_progress"]["issue_persists"] is True
+
+
+def test_quality_complaint_acknowledges_goal_and_asks_one_field_at_a_time():
+    state = merge_state(
+        {},
+        {},
+        "aftersales",
+        "同一个故障已经维修三次仍然复发，请登记质量投诉，不是再开普通维修。",
+        "quality-complaint",
+        intent="quality_complaint",
+    )
+
+    answer = ResponseComposer._compose_aftersales_state(state)
+
+    assert "质量投诉" in answer
+    assert "不会当作普通维修" in answer
+    assert "订单号" in answer
+    assert "故障现象" not in answer
+
+    group = build_missing_field_question_group(state, request_id="quality-question")
+    assert group["stage"] == "collect_order_id"
+    assert group["type"] == "text"
+    assert group["prompt"] == "请输入订单号"
+    assert group["options"] == []
 
 
 def test_short_command_does_not_inherit_without_matching_pending_action():

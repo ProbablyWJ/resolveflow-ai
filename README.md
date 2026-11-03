@@ -2,6 +2,9 @@
 
 ResolveFlow AI 是一个面向复杂售后服务的“决策与工单协同 Agent”。消费电子是第一个演示垂类，项目能力不绑定任何真实品牌。
 
+- **公网演示：** [https://resolveflow-ai-demo.onrender.com/](https://resolveflow-ai-demo.onrender.com/)
+- **GitHub：** [https://github.com/ProbablyWJ/resolveflow-ai](https://github.com/ProbablyWJ/resolveflow-ai)
+
 项目不只生成客服回复，而是推进一个售后任务：识别意图、选择角色、核验订单与设备、检索企业知识、执行安全诊断、生成方案，并在用户确认后创建演示工单。遇到高风险或权限边界时，系统停止自动处理并转人工。
 
 ## 为什么需要 Agent

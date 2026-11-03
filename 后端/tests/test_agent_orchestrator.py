@@ -424,6 +424,7 @@ def test_safety_risk_detection_is_negation_aware():
     assert detect_safety_risks("没有鼓包，但有烧焦味") == ["烧焦味"]
     assert detect_safety_risks("没有鼓包，设备后来开始冒烟") == ["冒烟"]
     assert detect_safety_risks("外壳变形而且发烫") == ["鼓包/变形", "异常发热"]
+    assert detect_safety_risks("充电盒特别烫，还有一股焦味") == ["烧焦味", "异常发热"]
 
     recognizer = IntentRecognizer.__new__(IntentRecognizer)
     assert recognizer._urgency(
@@ -438,6 +439,163 @@ def test_safety_risk_detection_is_negation_aware():
         "没有鼓包，但有烧焦味",
         IntentCategory.DEVICE_FAULT,
     ) is UrgencyLevel.CRITICAL
+
+
+def test_generic_exchange_failure_enters_progressive_safety_flow():
+    from core.support_flow import advance_device_support_flow
+
+    state = {"domain": "aftersales", "entities": {}}
+    first = advance_device_support_flow(
+        state,
+        message="刚买三天就坏了，能直接换新吗",
+        intent="exchange_request",
+        urgency="LOW",
+        request_id="exchange-vague",
+    )
+
+    assert first is not None
+    assert first.stage == "safety_check"
+    assert first.question_group["type"] == "single_select"
+    assert state["support_flow"]["stage"] == "safety_check"
+
+    second = advance_device_support_flow(
+        state,
+        message="没有",
+        intent="exchange_request",
+        urgency="LOW",
+        request_id="exchange-safe",
+    )
+    assert second is not None
+    assert second.stage == "symptom"
+
+
+def test_standalone_abandon_ends_flow_without_followup_or_tools():
+    from collections import deque
+
+    orchestrator = AgentOrchestrator.__new__(AgentOrchestrator)
+    orchestrator._recent_tool_traces = deque(maxlen=20)
+    req = Request(
+        message="算了，我不修了",
+        user_id="u1",
+        conv_id="abandon-fresh",
+        request_id="abandon-request",
+        intent=IntentCategory.TICKET_STATUS,
+        intent_group="aftersales",
+        urgency=UrgencyLevel.LOW,
+        entities={},
+        conversation_state={"domain": "aftersales"},
+    )
+
+    result = asyncio.run(orchestrator.run(req))
+
+    assert result.intent is IntentCategory.AFTERSALES
+    assert result.tools_used == []
+    assert result.question_group is None
+    assert "处理已结束" in result.response
+    assert "没有创建工单" in result.response
+    assert req.conversation_state["support_flow"]["status"] == "abandoned"
+
+
+def test_active_flow_accepts_unknown_model_even_when_raw_intent_is_wrong():
+    state = {
+        "support_flow": {
+            "type": "device_fault_clarification",
+            "status": "active",
+            "stage": "device_identity",
+            "goal_intent": "exchange_request",
+        }
+    }
+    req = Request(
+        message="不知道型号",
+        user_id="u1",
+        conv_id="unknown-model",
+        intent=IntentCategory.ACCOUNT_SECURITY,
+        intent_group="account",
+        urgency=UrgencyLevel.LOW,
+        entities={},
+        conversation_state=state,
+    )
+
+    resolution = AgentOrchestrator._inherit_support_flow_intent(req)
+
+    assert resolution is not None
+    assert req.intent is IntentCategory.EXCHANGE_REQUEST
+    assert resolution["raw_intent"] == "account_security"
+    assert resolution["resolved_intent"] == "exchange_request"
+
+
+def test_unknown_model_continues_with_generic_diagnosis_instead_of_repeating_question():
+    from core.support_flow import advance_device_support_flow
+
+    state = {
+        "entities": {"fault_symptom": ["左耳没声音"]},
+        "support_flow": {
+            "type": "device_fault_clarification",
+            "status": "active",
+            "stage": "device_identity",
+            "goal_intent": "device_fault",
+            "product_category": "耳机",
+            "symptom_category": "audio",
+            "symptom_detail": "左耳没声音",
+        },
+    }
+
+    decision = advance_device_support_flow(
+        state,
+        message="不知道型号",
+        intent="device_fault",
+        urgency="LOW",
+        request_id="unknown-model-next",
+    )
+
+    assert decision is None
+    assert state["support_flow"]["stage"] == "diagnosis_ready"
+    assert state["support_flow"]["status"] == "ready"
+    assert state["facts"]["device_identity_status"] == "unknown"
+    assert state["task_progress"]["continued_without_product_model"] is True
+
+
+def test_frustrated_device_failure_gets_acknowledgement_before_safety_question():
+    from core.support_flow import advance_device_support_flow
+
+    state = {}
+    decision = advance_device_support_flow(
+        state,
+        message="你们这破东西怎么又坏了",
+        intent="device_fault",
+        urgency="LOW",
+        request_id="frustrated-user",
+    )
+
+    assert decision.stage == "safety_check"
+    assert "抱歉" in decision.response
+    assert "影响使用" in decision.response
+    assert decision.question_group["type"] == "single_select"
+
+
+def test_low_information_goal_uses_selectable_clarification_group():
+    from collections import deque
+
+    orchestrator = AgentOrchestrator.__new__(AgentOrchestrator)
+    orchestrator._recent_tool_traces = deque(maxlen=20)
+    req = Request(
+        message="这个要怎么办啊",
+        user_id="u1",
+        conv_id="clarify-goal",
+        intent=IntentCategory.OTHER,
+        intent_group="other",
+        urgency=UrgencyLevel.LOW,
+        intent_confidence=0.2,
+        entities={},
+        conversation_state={},
+    )
+
+    result = asyncio.run(orchestrator.run(req))
+
+    assert result.agent_type is AgentType.INTAKE
+    assert result.question_group["stage"] == "clarify_goal"
+    assert result.question_group["type"] == "single_select"
+    assert len(result.question_group["options"]) == 6
 
 
 def test_cross_product_display_symptom_advances_to_device_identity():
@@ -497,6 +655,88 @@ def test_quality_complaint_missing_fields_stop_before_agent_and_return_component
     assert "普通维修" in result.response
 
 
+def test_exact_ticket_query_uses_deterministic_business_tool():
+    from collections import deque
+
+    orchestrator = AgentOrchestrator.__new__(AgentOrchestrator)
+    orchestrator._composer = ResponseComposer.__new__(ResponseComposer)
+    orchestrator._recent_tool_traces = deque(maxlen=20)
+    req = Request(
+        message="帮我查维修工单 RF-T20261020-001 的进度",
+        user_id="u1",
+        conv_id="ticket-direct",
+        intent=IntentCategory.TICKET_STATUS,
+        intent_group="aftersales",
+        urgency=UrgencyLevel.LOW,
+        entities={"ticket_id": ["RF-T20261020-001"]},
+        conversation_state={},
+    )
+
+    result = asyncio.run(orchestrator.run(req))
+
+    assert result.status == "success"
+    assert result.primary_agent is AgentType.RESOLUTION
+    assert result.tools_used == ["get_service_ticket"]
+    assert result.tool_traces[0]["result_success"] is True
+    assert "等待寄出设备" in result.response
+
+
+@pytest.mark.parametrize(
+    ("intent", "message", "required_text"),
+    [
+        (IntentCategory.GREETING, "你好，在吗", "我在"),
+        (IntentCategory.TECHNICAL_CRASH, "我的笔记本一直蓝屏怎么办", "错误代码"),
+    ],
+)
+def test_high_certainty_conversation_has_non_llm_product_fallback(intent, message, required_text):
+    from collections import deque
+
+    orchestrator = AgentOrchestrator.__new__(AgentOrchestrator)
+    orchestrator._composer = ResponseComposer.__new__(ResponseComposer)
+    orchestrator._recent_tool_traces = deque(maxlen=20)
+    req = Request(
+        message=message,
+        user_id="u1",
+        conv_id=f"direct-{intent.value}",
+        intent=intent,
+        intent_group="technical" if intent == IntentCategory.TECHNICAL_CRASH else "other",
+        urgency=UrgencyLevel.LOW,
+        entities={},
+        conversation_state={},
+    )
+
+    result = asyncio.run(orchestrator.run(req))
+
+    assert result.status == "success"
+    assert required_text in result.response
+    assert result.tools_used == []
+
+
+def test_declining_handoff_keeps_user_in_self_service_flow():
+    from collections import deque
+
+    orchestrator = AgentOrchestrator.__new__(AgentOrchestrator)
+    orchestrator._composer = ResponseComposer.__new__(ResponseComposer)
+    orchestrator._recent_tool_traces = deque(maxlen=20)
+    req = Request(
+        message="不要转人工，我想先自己排查",
+        user_id="u1",
+        conv_id="decline-handoff",
+        intent=IntentCategory.AFTERSALES,
+        intent_group="aftersales",
+        urgency=UrgencyLevel.LOW,
+        entities={},
+        conversation_state={},
+    )
+
+    result = asyncio.run(orchestrator.run(req))
+
+    assert result.escalated is False
+    assert result.primary_agent is AgentType.INTAKE
+    assert "先不转人工" in result.response
+    assert result.question_group["stage"] == "clarify_self_service_issue"
+
+
 def test_safety_entity_extraction_does_not_turn_negation_into_positive_fact():
     from core.intent_recognizer import IntentRecognizer
 
@@ -505,7 +745,7 @@ def test_safety_entity_extraction_does_not_turn_negation_into_positive_fact():
         "FlowBuds Pro 没有鼓包、没有冒烟，左耳没声音"
     )
 
-    assert entities["fault_symptom"] == ["没声音"]
+    assert entities["fault_symptom"] == ["左耳没声音"]
 
 
 def test_direct_safety_risk_blocks_normal_flow_and_prepares_handoff():

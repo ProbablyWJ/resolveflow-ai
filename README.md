@@ -132,19 +132,27 @@ docker compose run --rm --no-deps -u root -v "$PWD:/app" api \
 cd "../前端"
 npm test
 npm run build
+
+cd "../"
+python3 后端/evaluation/product_acceptance.py \
+  --dataset 后端/evaluation/cases/resolveflow_product_acceptance_v1.json \
+  --base-url http://localhost \
+  --output 后端/data/eval/product_acceptance_v1_latest.json
 ```
 
-2026-11-01 实测：
+2026-11-04 实测：
 
-- 后端 269 项自动化测试通过；
+- 后端 296 项自动化测试通过；
 - 前端 26 项测试通过，Vite 生产构建成功；
+- 用户视角产品验收 34/34 场景、49/49 轮通过，同时检查用户目标、问题组、路由、工具、状态、用户话术和耗时；
+- 产品验收接口延迟中位数约 78 毫秒，P95 约 2.16 秒，最大约 17.63 秒；
 - Docker 中 6 个服务全部健康，页面、API、Swagger 和统一网关均返回 200；
 - 评测集 v1.3 包含 60 条意图样本（10 类）和 14 个对话场景（21 轮），新增路由、工具顺序/参数、状态和问题组断言；
 - 真实 E101 用例按 `lookup_device → lookup_fault_code → run_device_diagnostic` 执行，参数与状态正确；
 - v1.3 完整评测任务 `5c1cb6921ed54fbd86af054d003ae15e`：22/22 条有效结果通过，调用链 20/20 轮通过，评测错误 0；
 - Judge 均值：相关性 1.0000、准确性 0.9643、完整性 0.8429、有用性 0.9333。
 
-上述 100% 是这套版本化开发集的通过结果，不代表真实业务稳定 100% 或用户满意度 100%。评测方法、数据口径和复现边界见 [`docs/evaluation.md`](docs/evaluation.md)。
+上述 100% 是固定产品验收集和版本化开发集的通过结果，不代表线上意图准确率、真实业务稳定性或用户满意度为 100%。评测方法、数据口径和复现边界见 [`docs/evaluation.md`](docs/evaluation.md)。
 
 ### 独立 holdout 结果
 

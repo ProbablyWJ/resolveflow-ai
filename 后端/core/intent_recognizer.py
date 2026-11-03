@@ -221,6 +221,36 @@ class IntentRecognizer:
 
         t0 = time.monotonic()
 
+        # 高精度、可解释的业务表达无需等待远端模型。先走确定性快路由，
+        # 只有开放语义再进入 LLM + Embedding + Pattern 三路融合。
+        fast_scores: Dict[str, float] = {}
+        if not history and re.fullmatch(
+            r"(?:这个|那个|它|这件事).{0,6}(?:怎么办|怎么弄|怎么处理|要怎么搞)[啊呀吗呢？?。！!\s]*",
+            (message or "").strip(),
+        ):
+            fast_intent, fast_confidence = IntentCategory.OTHER, 0.20
+            fast_scores["business_rule"] = 1.0
+        else:
+            fast_intent, fast_confidence = self._apply_high_precision_business_rules(
+                message, IntentCategory.OTHER, 0.0, fast_scores
+            )
+        if fast_scores.get("business_rule") == 1.0:
+            entities = self._extract_entities(message)
+            result = IntentResult(
+                intent=fast_intent,
+                confidence=fast_confidence,
+                urgency=self._urgency(message, fast_intent),
+                intent_group=self._intent_group(fast_intent),
+                entities=entities,
+                reasoning="deterministic_high_precision_rule",
+                latency_ms=(time.monotonic() - t0) * 1000,
+                source_scores=fast_scores,
+                embedding_source="deterministic-rule",
+            )
+            self._cache[key] = result
+            self._cache_expiries[key] = time.monotonic() + 300
+            return result
+
         # LLM 和 Embedding 并行（Embedding 不可用时跳过）
         llm_task = asyncio.create_task(self._llm_recognize(message, history))
         emb_task = asyncio.create_task(self._embedding_recognize(message)) if self._embedding_enabled else None
@@ -277,11 +307,89 @@ class IntentRecognizer:
             source_scores["business_rule"] = 1.0
             return IntentCategory.DEVICE_FAULT, max(confidence, 0.99)
 
+        if re.fullmatch(
+            r"(?:先)?(?:算了|不用了|不弄了|不处理了|不修了|先不(?:修|弄|处理)了|到此为止)"
+            r"(?:[，,。！!\s]*(?:我)?(?:不修了|不弄了|不处理了|不用处理了))?[。！!\s]*",
+            text,
+        ):
+            source_scores["business_rule"] = 1.0
+            return IntentCategory.AFTERSALES, max(confidence, 0.99)
+
+        requests_human = bool(re.search(r"(?:直接|马上|现在)?(?:转|转接|找)(?:一下)?人工|人工客服|真人客服|找真人", text))
+        rejects_human = bool(re.search(r"(?:不要|不用|先别|无需).{0,5}(?:转|转接|找)?人工", text))
+        if rejects_human:
+            source_scores["business_rule"] = 1.0
+            return IntentCategory.AFTERSALES, max(confidence, 0.97)
+        if requests_human and not rejects_human:
+            source_scores["business_rule"] = 1.0
+            return IntentCategory.HUMAN_HANDOFF, max(confidence, 0.99)
+
         # 明确的业务目标优先于弱关键词。这些表达不需要模型猜测，
         # 且能在 LLM 超时时稳定兜底。
         if re.fullmatch(r"(?:你好[，,。！!\s]*)?(?:在吗|有人在吗|客服在吗)[？?。！!\s]*", text):
             source_scores["business_rule"] = 1.0
             return IntentCategory.GREETING, max(confidence, 0.95)
+
+        if re.fullmatch(r"(?:返回上一问题|返回上一步|上一步|修改上一项|重新回答上一题)[。！!\s]*", text):
+            source_scores["business_rule"] = 1.0
+            return IntentCategory.AFTERSALES, max(confidence, 0.99)
+
+        if re.search(r"(?:找不到|没有|不知道|忘了).{0,6}(?:工单号|售后单号|维修单号)", text):
+            source_scores["business_rule"] = 1.0
+            return IntentCategory.TICKET_STATUS, max(confidence, 0.98)
+
+        if re.search(r"蓝屏|系统崩溃|应用崩溃|软件崩溃|反复闪退|一直闪退", text):
+            source_scores["business_rule"] = 1.0
+            return IntentCategory.TECHNICAL_CRASH, max(confidence, 0.97)
+
+        explicit_part_request = bool(
+            re.search(
+                r"(?:换|更换|补|补发|买|申请|需要|想要|只想).{0,10}"
+                r"(?:充电盒|耳帽|电源线|数据线|充电线|滚刷|过滤网|底座|配件)",
+                text,
+            )
+            or re.search(
+                r"(?:充电盒|耳帽|电源线|数据线|充电线|滚刷|过滤网|底座|配件).{0,8}"
+                r"(?:换|更换|补|补发|申请|需要)",
+                text,
+            )
+        )
+        part_request_negated = bool(re.search(
+            r"(?:不是|不要|不想|不用|先别).{0,8}(?:补|换|更换|申请)?(?:一个)?配件",
+            text,
+        ))
+        part_warranty_question = bool(re.search(
+            r"(?:配件|充电盒|耳帽|电源线|数据线|滚刷|过滤网|底座).{0,12}"
+            r"(?:保多久|保多长|质保多久|保修多久|保修期|质保期)",
+            text,
+        ))
+        if explicit_part_request and not part_request_negated and not part_warranty_question:
+            source_scores["business_rule"] = 1.0
+            return IntentCategory.PARTS_REQUEST, max(confidence, 0.97)
+
+        direct_exchange = bool(re.search(r"(?:直接|能否|可以|想|要)?(?:换|更换)(?:一台|一部|一副|一个)", text))
+        exchange_denied = bool(re.search(r"(?:不要|不想|不用|先别|不考虑).{0,8}(?:换|更换)(?:一台|一部|一副|一个)", text))
+        if direct_exchange and not exchange_denied:
+            source_scores["business_rule"] = 1.0
+            return IntentCategory.EXCHANGE_REQUEST, max(confidence, 0.97)
+
+        product_mentioned = bool(re.search(
+            r"耳机|耳塞|左耳|右耳|充电盒|电脑|笔记本|手机|平板|相机|摄像头|吸尘器|扫地机|洗地机|"
+            r"flowbuds|flowcam|flowclean|设备|产品|东西|東西",
+            text,
+        ))
+        device_problem = bool(re.search(
+            r"坏了|坏掉|不能用|用不了|没声音|无声|连不上|无法连接|充不上电|无法充电|"
+            r"开不了机|无法开机|黑屏|花屏|失灵|故障|有点热|发热|发烫|很热",
+            text,
+        ))
+        explicit_service_goal = bool(re.search(
+            r"维修|报修|送修|寄修|返修|换货|换新|换机|置换|配件|补发",
+            text,
+        ))
+        if product_mentioned and device_problem and not explicit_service_goal:
+            source_scores["business_rule"] = 1.0
+            return IntentCategory.DEVICE_FAULT, max(confidence, 0.97)
 
         quality_feedback = bool(
             re.search(r"质量.{0,8}(?:反馈|投诉)|(?:反馈|投诉).{0,8}质量", text)
@@ -302,6 +410,14 @@ class IntentRecognizer:
         if exchange_eligibility:
             source_scores["business_rule"] = 1.0
             return IntentCategory.EXCHANGE_REQUEST, max(confidence, 0.95)
+
+        ticket_location = bool(
+            re.search(r"(?:工单|售后单|维修单|服务单).{0,10}(?:在哪|哪里|怎么看|查看|查找|查询|找到)", text)
+            or re.search(r"(?:在哪|哪里|怎么看|查看|查找|查询).{0,10}(?:工单|售后单|维修单|服务单)", text)
+        )
+        if ticket_location:
+            source_scores["business_rule"] = 1.0
+            return IntentCategory.TICKET_STATUS, max(confidence, 0.97)
 
         explicit_repair_service = bool(
             re.search(r"(?:付费|上门|预约|官方).{0,12}(?:维修|检修|修理|寄修|返修|送修)", text)
@@ -330,7 +446,7 @@ class IntentRecognizer:
             source_scores["business_rule"] = 1.0
             return IntentCategory.TICKET_STATUS, max(confidence, 0.99)
 
-        service_progress = re.search(r"进展|进度|进行到|处理到|哪个节点|哪一步", text)
+        service_progress = re.search(r"进展|进度|进行到|处理到|到哪(?:了|儿)?|哪个节点|哪一步", text)
         if service_progress and re.search(r"维修|换货|换机|售后|申请|流程", text):
             source_scores["business_rule"] = 1.0
             return IntentCategory.TICKET_STATUS, max(confidence, 0.95)
@@ -638,7 +754,7 @@ class IntentRecognizer:
         # 检测，避免把“没有冒烟”保存成用户已报告的正向风险事实。
         symptoms = self._unique(
             re.findall(
-                r"(左耳无声|右耳无声|单侧无声|没有声音|没声音|无法充电|充不进电|连接失败|连不上|频繁断连|续航异常)",
+                r"(左耳无声|右耳无声|左耳没声音|右耳没声音|单侧无声|没有声音|没声音|无法充电|充不进电|连接失败|连不上|频繁断连|续航异常)",
                 message,
             )
             + detect_safety_risks(message)

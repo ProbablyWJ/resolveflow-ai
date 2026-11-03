@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 
 from core.intent_recognizer import IntentCategory, IntentRecognizer
@@ -134,6 +136,55 @@ def test_device_safety_risk_overrides_model_and_history_noise():
 
 
 @pytest.mark.parametrize(
+    ("message", "expected"),
+    [
+        ("我的电脑坏了", IntentCategory.DEVICE_FAULT),
+        ("刚拆封就无法开机，可以直接换一台吗", IntentCategory.EXCHANGE_REQUEST),
+        ("我的笔记本一直蓝屏怎么办", IntentCategory.TECHNICAL_CRASH),
+        ("我不想再跟机器人说了，直接转人工", IntentCategory.HUMAN_HANDOFF),
+        ("算了，我不修了", IntentCategory.AFTERSALES),
+        ("返回上一问题", IntentCategory.AFTERSALES),
+        ("我找不到工单号", IntentCategory.TICKET_STATUS),
+        ("耳机好像有点热，我不确定这算不算异常", IntentCategory.DEVICE_FAULT),
+        ("FlowBuds Pro 左耳没声音，没有发烫或鼓包", IntentCategory.DEVICE_FAULT),
+        ("我只想换一个充电盒，不修整机", IntentCategory.PARTS_REQUEST),
+        ("维修工单在哪里看", IntentCategory.TICKET_STATUS),
+        ("耳机掉水里了，现在还能继续用吗", IntentCategory.DEVICE_FAULT),
+        ("不要转人工，我想先自己排查", IntentCategory.AFTERSALES),
+    ],
+)
+def test_product_high_precision_phrases_have_deterministic_routes(message, expected):
+    sources = {}
+    intent, confidence = IntentRecognizer._apply_high_precision_business_rules(
+        message, IntentCategory.OTHER, 0.0, sources,
+    )
+
+    assert intent is expected
+    assert confidence >= 0.95
+    assert sources["business_rule"] == pytest.approx(1.0)
+
+
+def test_deterministic_route_skips_remote_llm_call():
+    recognizer = IntentRecognizer.__new__(IntentRecognizer)
+    recognizer._cache = {}
+    recognizer._cache_expiries = {}
+    recognizer.cache_hits = 0
+    recognizer.cache_misses = 0
+
+    async def forbidden(*_args, **_kwargs):
+        raise AssertionError("确定性快路由不应调用远端模型")
+
+    recognizer._llm_recognize = forbidden
+    recognizer._embedding_recognize = forbidden
+
+    result = asyncio.run(recognizer.recognize("我的电脑坏了"))
+
+    assert result.intent is IntentCategory.DEVICE_FAULT
+    assert result.embedding_source == "deterministic-rule"
+    assert result.source_scores["business_rule"] == pytest.approx(1.0)
+
+
+@pytest.mark.parametrize(
     ("message", "initial", "expected"),
     [
         ("我想申请维修，不考虑换新", IntentCategory.EXCHANGE_REQUEST, IntentCategory.REPAIR_REQUEST),
@@ -142,6 +193,7 @@ def test_device_safety_risk_overrides_model_and_history_noise():
         ("想查一下配件申请要什么资料", IntentCategory.TECHNICAL_LOGIN, IntentCategory.PARTS_REQUEST),
         ("我不要整机维修，只需要一个滚刷", IntentCategory.REPAIR_REQUEST, IntentCategory.PARTS_REQUEST),
         ("查询一下我的换货申请处理进度", IntentCategory.EXCHANGE_REQUEST, IntentCategory.TICKET_STATUS),
+        ("我想查一下维修到哪了", IntentCategory.REPAIR_REQUEST, IntentCategory.TICKET_STATUS),
         ("同一个故障处理三次还没好，我要投诉", IntentCategory.ESCALATION, IntentCategory.QUALITY_COMPLAINT),
         ("不知道该报修还是申请其他服务", IntentCategory.REPAIR_REQUEST, IntentCategory.AFTERSALES),
     ],

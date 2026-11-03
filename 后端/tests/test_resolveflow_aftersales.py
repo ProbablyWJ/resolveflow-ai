@@ -529,6 +529,26 @@ def test_quality_complaint_acknowledges_goal_and_asks_one_field_at_a_time():
     assert group["options"] == []
 
 
+def test_ticket_tracking_missing_id_uses_component_aligned_customer_copy():
+    state = merge_state(
+        {},
+        {},
+        "aftersales",
+        "我想查一下维修到哪了",
+        "ticket-missing-id",
+        intent="ticket_status",
+    )
+
+    answer = ResponseComposer._compose_aftersales_state(state)
+    group = build_missing_field_question_group(state, request_id="ticket-question")
+
+    assert answer == "我可以帮你查询维修进度。请先输入维修工单号，可在售后记录或通知消息中查看。"
+    assert group["stage"] == "collect_ticket_id"
+    assert group["prompt"] == "请输入维修工单号"
+    assert "订单号" not in answer
+    assert "序列号" not in answer
+
+
 def test_short_command_does_not_inherit_without_matching_pending_action():
     request = make_request("确认创建工单。", IntentCategory.TICKET_STATUS)
     original = request.intent

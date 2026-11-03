@@ -11,7 +11,7 @@ from agents.agent_orchestrator import (
 from core.intent_recognizer import IntentCategory, IntentRecognizer, UrgencyLevel
 from core.conversation_state import merge_state
 from evaluation.evaluator import DEFAULT_DIALOG_CASES, EndToEndEvaluator, QualityScores
-from memory.conversation_memory import MemoryManager
+from memory.conversation_memory import MemoryContext, MemoryManager
 from tooling.knowledge_base import KnowledgeBase
 
 
@@ -101,6 +101,28 @@ def test_neutral_order_request_keeps_order_for_next_billing_turn():
     state = merge_state({}, {"order_id": ["12345"]}, "request", "帮我取消订单 #12345", "one")
     next_state = merge_state(state, {"order_id": []}, "billing", "这笔订单怎么退款", "two")
     assert next_state["entities"]["order_id"] == ["12345"]
+
+
+def test_cross_conversation_profile_does_not_expose_old_task_entities():
+    context = MemoryContext(
+        recent_messages=[],
+        relevant_history=[],
+        user_profile={
+            "preferences": ["偏好先自助排查"],
+            "entities": {
+                "产品": ["耳机", "摄像头"],
+                "问题类型": ["右耳断续", "画面全黑"],
+            },
+        },
+        summary="",
+    )
+
+    prompt = context.to_prompt_text()
+
+    assert '"preferences"' in prompt
+    assert "右耳断续" not in prompt
+    assert "画面全黑" not in prompt
+    assert '"entities"' not in prompt
 
 
 @pytest.mark.asyncio

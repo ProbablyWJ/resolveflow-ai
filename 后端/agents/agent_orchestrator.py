@@ -38,6 +38,7 @@ from agents.tools import (
     create_handoff_summary,
     escalation_tools,
     general_tools,
+    get_service_ticket,
     technical_tools,
 )
 from core.action_confirmation import is_explicit_ticket_confirmation, is_explicit_ticket_rejection
@@ -47,7 +48,10 @@ from core.support_flow import (
     advance_device_support_flow,
     build_missing_field_question_group,
     detect_safety_risks,
+    is_expected_support_flow_answer,
+    is_flow_abandon_message,
     is_active_support_flow,
+    mark_support_flow_abandoned,
     mark_support_flow_safety_risk,
 )
 
@@ -894,6 +898,15 @@ class ResponseComposer:
         verified_fault = facts.get("verified_fault", {}) or {}
         pending = state.get("pending_action") or {}
         task_progress = state.get("task_progress", {}) or {}
+        field_labels = {
+            "order_id": "订单号",
+            "product_model": "产品型号",
+            "serial_number": "设备序列号",
+            "fault_symptom": "故障现象",
+            "fault_code": "故障码",
+            "ticket_id": "维修工单号",
+        }
+        missing = plan.get("missing_fields", []) or []
         troubleshooting_completed = bool(task_progress.get("troubleshooting_completed")) or bool(re.search(
             r"(?:排查|步骤).{0,24}(?:完成|做完|试过|都做了).{0,24}(?:仍|还是|依然).{0,16}(?:无声|没声音|故障|异常|不能|问题)",
             message or "",
@@ -908,6 +921,35 @@ class ResponseComposer:
                 f"演示工单 {ticket_id} 已创建，当前请等待售后审核；你也可以用该工单号查询进度。"
                 "这是本地模拟业务数据，不代表已进入真实品牌售后队列。"
             )
+
+        # 缺少业务字段时先用确定性的用户话术逐项收集，避免模型输出
+        # “基础信息待核验”等内部计划语言，或与前端问题组件口径冲突。
+        if missing and not pending and not diagnosis:
+            first_missing = missing[0]
+            intent = state.get("intent")
+            label = field_labels.get(first_missing, first_missing)
+            if intent == "ticket_status" and first_missing == "ticket_id":
+                if re.search(r"(?:找不到|没有|不知道|忘了).{0,6}(?:工单号|售后单号|维修单号)", message or ""):
+                    return (
+                        "如果找不到维修工单号，可先在售后记录或通知消息中查看。"
+                        "当前演示版暂不支持用订单号反查工单；如仍找不到，"
+                        "请联系人工客服并提供订单号和下单时间。"
+                    )
+                return (
+                    "我可以帮你查询维修进度。请先输入维修工单号，"
+                    "可在售后记录或通知消息中查看。"
+                )
+            if intent == "exchange_request":
+                return (
+                    "我可以帮你核验换新条件，但是否符合需要结合订单、设备和故障情况确认。"
+                    f"请先提供{label}。"
+                )
+            if intent == "repair_request":
+                return f"我可以继续帮你报修。请先提供{label}。"
+            if intent == "warranty_inquiry":
+                return f"我先帮你核验保修状态。请先提供{label}。"
+            if intent == "parts_request":
+                return f"我可以帮你核验配件服务。请先提供{label}。"
 
         intent = state.get("intent")
         resolution = facts.get("recommended_resolution")
@@ -1007,15 +1049,6 @@ class ResponseComposer:
             lines.append("完成后告诉我哪一步有效，或直接回复“都没解决”，我再继续处理。")
             return "\n".join(lines)
 
-        field_labels = {
-            "order_id": "订单号",
-            "product_model": "产品型号",
-            "serial_number": "设备序列号",
-            "fault_symptom": "故障现象",
-            "fault_code": "故障码",
-            "ticket_id": "工单号",
-        }
-        missing = plan.get("missing_fields", [])
         if missing:
             # 用户端每轮只推进一个问题，避免把内部字段清单一次性抛给用户。
             first_missing = missing[0]
@@ -1378,6 +1411,59 @@ class AgentOrchestrator:
                 req.context = ""
                 req.history = None
 
+            # 明确工单号查询是结构化业务请求：直接调用查询工具，
+            # 避免先等生成模型决定是否查询，导致超时或遗漏工具调用。
+            ticket_ids = req.entities.get("ticket_id", []) if isinstance(req.entities, dict) else []
+            if req.intent == IntentCategory.TICKET_STATUS and ticket_ids:
+                ticket_id = str(ticket_ids[0]).upper()
+                tool_t0 = time.monotonic()
+                req.tool_attempts.append({"tool_name": "get_service_ticket", "retry_safe": True})
+                tool_result = get_service_ticket(req, {"ticket_id": ticket_id})
+                tool_latency = (time.monotonic() - tool_t0) * 1000
+                found = bool(tool_result.get("success"))
+                response_text = (
+                    self._composer._compose_ticket_status(req.conversation_state)
+                    if found
+                    else f"暂时没有查到工单 {ticket_id}，请检查工单号后重试。"
+                )
+                trace = {
+                    "agent_type": AgentType.RESOLUTION.value,
+                    "tool_name": "get_service_ticket",
+                    "tool_use_id": f"deterministic:{req.request_id}",
+                    "input": {"ticket_id": ticket_id},
+                    "success": True,
+                    "result_success": found,
+                    "latency_ms": round(tool_latency, 1),
+                    "cached": False,
+                    "reranked": False,
+                    "error": str(tool_result.get("error", "") or ""),
+                    "source": tool_result.get("source", "local"),
+                    "mcp_server": None,
+                    "mcp_tool": None,
+                    "retry_safe": True,
+                }
+                result = OrchestratorResult(
+                    request_id=req.request_id,
+                    response=response_text,
+                    agent_type=AgentType.RESOLUTION,
+                    intent=req.intent,
+                    escalated=False,
+                    latency_ms=(time.monotonic() - t0) * 1000,
+                    agent_types=[AgentType.RESOLUTION],
+                    primary_agent=AgentType.RESOLUTION,
+                    supporting_agents=[],
+                    tools_used=["get_service_ticket"],
+                    tool_traces=[trace],
+                    routing_reason="deterministic_structured_lookup: ticket_id",
+                    routing_confidence=1.0,
+                    status="success",
+                    retryable=False,
+                    task_state=dict(req.conversation_state),
+                    question_group=None,
+                )
+                self._record_tool_trace(result)
+                return result
+
             # 明确拒绝待执行写操作时直接由确定性安全边界回答：
             # 不路由给生成模型，不调用任何工具，也不清除待确认方案。
             pending = req.conversation_state.get("pending_action")
@@ -1438,6 +1524,39 @@ class AgentOrchestrator:
                 )
                 self._record_tool_trace(result)
                 return result
+            if not pending and is_flow_abandon_message(req.message):
+                req.intent = IntentCategory.AFTERSALES
+                req.intent_group = "aftersales"
+                req.intent_confidence = 1.0
+                req.intent_source_scores["flow_abandon_rule"] = 1.0
+                req.conversation_state["intent"] = IntentCategory.AFTERSALES.value
+                mark_support_flow_abandoned(
+                    req.conversation_state, request_id=req.request_id,
+                )
+                result = OrchestratorResult(
+                    request_id=req.request_id,
+                    response=(
+                        "好的，本次处理已结束，当前没有创建工单或执行其他操作。"
+                        "之后需要帮助时，直接告诉我设备和问题即可。"
+                    ),
+                    agent_type=AgentType.INTAKE,
+                    intent=req.intent,
+                    escalated=False,
+                    latency_ms=(time.monotonic() - t0) * 1000,
+                    agent_types=[AgentType.INTAKE],
+                    primary_agent=AgentType.INTAKE,
+                    supporting_agents=[],
+                    tools_used=[],
+                    tool_traces=[],
+                    routing_reason="用户明确结束当前流程",
+                    routing_confidence=1.0,
+                    status="success",
+                    retryable=False,
+                    task_state=dict(req.conversation_state),
+                    question_group=None,
+                )
+                self._record_tool_trace(result)
+                return result
             if req.urgency == UrgencyLevel.CRITICAL or req.intent in (
                 IntentCategory.ESCALATION,
                 IntentCategory.HUMAN_HANDOFF,
@@ -1491,12 +1610,19 @@ class AgentOrchestrator:
                 self._record_tool_trace(result)
                 return result
 
-            # 质量投诉在必要业务字段缺失时，先由确定性门控每轮收集一项。
-            # 不让诊断 Agent 从历史上下文猜测设备或故障，也避免过早调用 RAG。
+            # 结构化售后任务在必要业务字段缺失时，每轮只收集一项。
+            # 不让生成模型猜测字段，也避免回复与前端问题组件口径冲突。
             missing_group = build_missing_field_question_group(
                 req.conversation_state, request_id=req.request_id,
             )
-            if req.intent == IntentCategory.QUALITY_COMPLAINT and missing_group is not None:
+            if req.intent in {
+                IntentCategory.QUALITY_COMPLAINT,
+                IntentCategory.TICKET_STATUS,
+                IntentCategory.WARRANTY_INQUIRY,
+                IntentCategory.REPAIR_REQUEST,
+                IntentCategory.EXCHANGE_REQUEST,
+                IntentCategory.PARTS_REQUEST,
+            } and missing_group is not None:
                 result = OrchestratorResult(
                     request_id=req.request_id,
                     response=self._composer._compose_aftersales_state(
@@ -1511,7 +1637,7 @@ class AgentOrchestrator:
                     supporting_agents=[],
                     tools_used=[],
                     tool_traces=[],
-                    routing_reason="information_readiness_gate: quality_complaint_missing_field",
+                    routing_reason="information_readiness_gate: structured_task_missing_field",
                     routing_confidence=1.0,
                     status="success",
                     retryable=False,
@@ -1520,6 +1646,92 @@ class AgentOrchestrator:
                 )
                 self._record_tool_trace(result)
                 return result
+
+        if req.intent == IntentCategory.GREETING:
+            result = OrchestratorResult(
+                request_id=req.request_id,
+                response="你好，我在。可以直接告诉我你遇到的设备故障或售后问题。",
+                agent_type=AgentType.INTAKE,
+                intent=req.intent,
+                escalated=False,
+                latency_ms=(time.monotonic() - t0) * 1000,
+                agent_types=[AgentType.INTAKE],
+                primary_agent=AgentType.INTAKE,
+                supporting_agents=[],
+                tools_used=[],
+                tool_traces=[],
+                routing_reason="deterministic_conversation: greeting",
+                routing_confidence=1.0,
+                status="success",
+                retryable=False,
+                task_state=dict(req.conversation_state or {}),
+                question_group=None,
+            )
+            self._record_tool_trace(result)
+            return result
+
+        if req.intent == IntentCategory.TECHNICAL_CRASH:
+            result = OrchestratorResult(
+                request_id=req.request_id,
+                response=(
+                    "如果笔记本反复蓝屏，请先记下蓝屏页面的错误代码，并保存未完成的文件。"
+                    "可以先断开最近新接入的外设，重启后观察是否复现；"
+                    "若仍然蓝屏，请提供错误代码或页面照片，我再继续排查。"
+                ),
+                agent_type=AgentType.DIAGNOSTIC,
+                intent=req.intent,
+                escalated=False,
+                latency_ms=(time.monotonic() - t0) * 1000,
+                agent_types=[AgentType.DIAGNOSTIC],
+                primary_agent=AgentType.DIAGNOSTIC,
+                supporting_agents=[],
+                tools_used=[],
+                tool_traces=[],
+                routing_reason="deterministic_safe_fallback: technical_crash",
+                routing_confidence=1.0,
+                status="success",
+                retryable=False,
+                task_state=dict(req.conversation_state or {}),
+                question_group=None,
+            )
+            self._record_tool_trace(result)
+            return result
+
+        if (
+            req.intent == IntentCategory.AFTERSALES
+            and re.search(r"(?:不要|不用|先别|无需).{0,5}(?:转|转接|找)?人工", req.message or "")
+        ):
+            result = OrchestratorResult(
+                request_id=req.request_id,
+                response="好的，先不转人工。请告诉我是什么设备、具体出现了什么问题，我会一步步带你排查。",
+                agent_type=AgentType.INTAKE,
+                intent=req.intent,
+                escalated=False,
+                latency_ms=(time.monotonic() - t0) * 1000,
+                agent_types=[AgentType.INTAKE],
+                primary_agent=AgentType.INTAKE,
+                supporting_agents=[],
+                tools_used=[],
+                tool_traces=[],
+                routing_reason="deterministic_conversation: user_declined_handoff",
+                routing_confidence=1.0,
+                status="success",
+                retryable=False,
+                task_state=dict(req.conversation_state or {}),
+                question_group={
+                    "id": f"{req.request_id}:clarify_self_service_issue",
+                    "stage": "clarify_self_service_issue",
+                    "type": "text",
+                    "prompt": "请描述设备和故障表现",
+                    "options": [],
+                    "required": True,
+                    "allow_text": True,
+                    "text_placeholder": "例如：FlowBuds Pro 左耳没声音",
+                    "submit_label": "提交",
+                },
+            )
+            self._record_tool_trace(result)
+            return result
 
         if self._needs_clarification(req):
             result = OrchestratorResult(
@@ -1534,6 +1746,24 @@ class AgentOrchestrator:
                 routing_reason="低置信度 OTHER 意图，先澄清用户需求",
                 routing_confidence=req.intent_confidence,
                 task_state=dict(req.conversation_state or {}),
+                question_group={
+                    "id": f"{req.request_id}:clarify_goal",
+                    "stage": "clarify_goal",
+                    "type": "single_select",
+                    "prompt": "请选择需要处理的问题",
+                    "options": [
+                        {"id": "device_fault", "label": "设备故障", "value": "设备故障"},
+                        {"id": "warranty", "label": "保修查询", "value": "保修查询"},
+                        {"id": "repair_exchange", "label": "维修或换新", "value": "维修或换新"},
+                        {"id": "parts", "label": "配件申请", "value": "配件申请"},
+                        {"id": "ticket", "label": "查询维修进度", "value": "查询维修进度"},
+                        {"id": "human", "label": "联系人工", "value": "联系人工"},
+                    ],
+                    "required": True,
+                    "allow_text": True,
+                    "text_placeholder": "也可以直接描述遇到的问题",
+                    "submit_label": "提交",
+                },
             )
             self._record_tool_trace(result)
             return result
@@ -1550,12 +1780,13 @@ class AgentOrchestrator:
         # 用确定性摘要完成本轮，而不是把业务成功误记成执行失败。
         state = req.conversation_state if isinstance(req.conversation_state, dict) else {}
         if (
-            response.success
-            and req.intent == IntentCategory.TICKET_STATUS
+            req.intent == IntentCategory.TICKET_STATUS
             and state.get("facts", {}).get("verified_ticket")
         ):
             response.content = self._composer._compose_ticket_status(state)
+            response.success = True
             response.status = "success"
+            response.error_code = None
         if (
             response.success
             and req.intent == IntentCategory.WARRANTY_INQUIRY
@@ -1663,17 +1894,28 @@ class AgentOrchestrator:
             IntentCategory.GREETING,
             IntentCategory.DEVICE_FAULT,
         }
-        if req.intent not in inheritable:
+        expected_answer = is_expected_support_flow_answer(
+            req.conversation_state, req.message,
+        )
+        if req.intent not in inheritable and not expected_answer:
             return None
         raw_intent = req.intent.value if req.intent else None
-        req.intent = IntentCategory.DEVICE_FAULT
+        goal_value = str(
+            req.conversation_state.get("support_flow", {}).get("goal_intent")
+            or IntentCategory.DEVICE_FAULT.value
+        )
+        resolved = {
+            IntentCategory.EXCHANGE_REQUEST.value: IntentCategory.EXCHANGE_REQUEST,
+            IntentCategory.REPAIR_REQUEST.value: IntentCategory.REPAIR_REQUEST,
+        }.get(goal_value, IntentCategory.DEVICE_FAULT)
+        req.intent = resolved
         req.intent_group = "aftersales"
         req.intent_confidence = max(float(req.intent_confidence or 0), 0.99)
         req.intent_source_scores["clarification_state"] = 1.0
         return {
             "source": "support_flow",
             "raw_intent": raw_intent,
-            "resolved_intent": IntentCategory.DEVICE_FAULT.value,
+            "resolved_intent": resolved.value,
             "stage": req.conversation_state.get("support_flow", {}).get("stage"),
         }
 

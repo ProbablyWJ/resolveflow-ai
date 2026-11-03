@@ -43,10 +43,16 @@ _SAFETY_RISK_ALIASES = (
     ("鼓包/变形", ("电池鼓包", "鼓包", "外壳变形", "变形")),
     ("冒烟", ("冒烟",)),
     ("起火", ("起火", "着火")),
-    ("烧焦味", ("烧焦味", "焦糊味", "糊味")),
-    ("进水/漏液", ("进水", "漏液", "漏电池液")),
+    ("烧焦味", ("烧焦味", "焦糊味", "焦味", "焦臭味", "烧糊味", "糊味")),
+    ("进水/漏液", ("进水", "掉水里", "掉进水里", "泡水", "浸水", "漏液", "漏电池液")),
     ("触电", ("触电", "麻手")),
-    ("异常发热", ("异常高温", "异常发热", "明显发烫", "发烫", "烫手")),
+    (
+        "异常发热",
+        (
+            "异常高温", "异常发热", "明显发烫", "特别发烫", "特别烫",
+            "很烫", "烫得厉害", "发烫", "烫手",
+        ),
+    ),
     ("人身伤害", ("烫伤", "人身伤害")),
 )
 _SAFETY_CLEAR = re.compile(
@@ -58,7 +64,12 @@ _SAFETY_CLEAR = re.compile(
 _SAFETY_UNCERTAIN = re.compile(r"不确定|不知道|看不出|不清楚")
 _SAFETY_YES = re.compile(r"^(?:有|是|是的|有这种情况)[。！！!\s]*$")
 _UNKNOWN_DEVICE = re.compile(r"不知道|看不到|不清楚|没有型号|找不到")
+_FRUSTRATED_USER = re.compile(r"破东西|垃圾|太差|又坏了|反复坏|老是坏|受够了|烦死了")
 _BACK_COMMAND = re.compile(r"^(?:返回上一问题|返回上一步|上一步|修改上一项|重新回答上一题)[。！!\s]*$")
+_FLOW_ABANDON = re.compile(
+    r"^(?:先)?(?:算了|不用了|不弄了|不处理了|不修了|先不(?:修|弄|处理)了|到此为止)"
+    r"(?:[，,。！!\s]*(?:我)?(?:不修了|不弄了|不处理了|不用处理了))?[。！!\s]*$"
+)
 
 
 @dataclass(frozen=True)
@@ -77,6 +88,64 @@ def is_active_support_flow(state: Any) -> bool:
         and flow.get("status") == "active"
         and flow.get("stage") in ACTIVE_STAGES
     )
+
+
+def is_flow_abandon_message(text: str) -> bool:
+    """识别独立的流程退出短句，不吞掉“算了，不要提交”等写操作拒绝。"""
+    return bool(_FLOW_ABANDON.fullmatch((text or "").strip()))
+
+
+def mark_support_flow_abandoned(
+    state: Dict[str, Any], *, request_id: str
+) -> None:
+    """把流程显式标记为结束，避免模型继续追问或虚构待办。"""
+    if not isinstance(state, dict):
+        return
+    flow = dict(state.get("support_flow") or {})
+    flow.update({
+        "status": "abandoned",
+        "stage": "abandoned",
+        "updated_request_id": request_id,
+    })
+    state["support_flow"] = flow
+    state.setdefault("facts", {})["flow_abandoned"] = True
+    state.setdefault("resolution_plan", {}).update({
+        "status": "abandoned",
+        "next_step": "none",
+        "interaction_stage": "abandoned",
+    })
+
+
+def is_expected_support_flow_answer(state: Any, text: str) -> bool:
+    """判断当前短句是否在回答正在展示的问题组件。
+
+    当前问题的答案优先于一次不稳定的开放式意图分类；明确的新业务目标仍由
+    Orchestrator 的意图切换逻辑处理。
+    """
+    if not is_active_support_flow(state):
+        return False
+    stage = str((state.get("support_flow") or {}).get("stage") or "")
+    value = (text or "").strip()
+    if _BACK_COMMAND.search(value) or is_flow_abandon_message(value):
+        return True
+    if stage == "safety_check":
+        return bool(
+            _SAFETY_CLEAR.search(value)
+            or _SAFETY_UNCERTAIN.search(value)
+            or _SAFETY_YES.search(value)
+            or detect_safety_risks(value)
+        )
+    if stage == "safety_detail":
+        return bool(detect_safety_risks(value))
+    if stage == "symptom":
+        return bool(detect_symptom_category(value))
+    if stage == "device_identity":
+        return bool(
+            _UNKNOWN_DEVICE.search(value)
+            or detect_product_category(value)
+            or re.search(r"flowbuds|flowcam|flowclean|型号|序列号|sn\b", value, re.I)
+        )
+    return False
 
 
 def detect_product_category(text: str) -> Optional[str]:
@@ -114,8 +183,15 @@ def detect_safety_risks(text: str) -> list[str]:
             continue
         for label, aliases in _SAFETY_RISK_ALIASES:
             matched = False
-            for alias in aliases:
+            # 同一风险下优先匹配长表达，并占用其字符区间；否则“焦味”会在
+            # “没有烧焦味”内部被第二次识别，破坏已经成立的否定判断。
+            occupied_spans: list[tuple[int, int]] = []
+            for alias in sorted(aliases, key=len, reverse=True):
                 for occurrence in re.finditer(re.escape(alias), segment):
+                    span = occurrence.span()
+                    if any(span[0] >= start and span[1] <= end for start, end in occupied_spans):
+                        continue
+                    occupied_spans.append(span)
                     prefix = segment[:occurrence.start()]
                     immediate = prefix[-4:]
                     explicitly_positive = bool(
@@ -217,9 +293,16 @@ def _set_stage(state: Dict[str, Any], flow: Dict[str, Any], stage: str, request_
 
 def _safety_question() -> str:
     return (
-        "先确认安全情况：设备是否有发烫、鼓包、冒烟、烧焦味、漏液或触电中的任一情况？\n\n"
+        "先确认安全情况：设备是否有发烫、鼓包、冒烟、烧焦味、进水/漏液或触电中的任一情况？\n\n"
         "请选择：有 / 没有 / 不确定，也可以直接描述。"
     )
+
+
+def _safety_question_with_acknowledgement(text: str) -> str:
+    """只在用户明确表达不满时增加一句承接，不改变安全问题组和分支逻辑。"""
+    if _FRUSTRATED_USER.search(text or ""):
+        return "抱歉设备又出现问题，确实很影响使用。\n\n" + _safety_question()
+    return _safety_question()
 
 
 def _symptom_question(category: Optional[str]) -> str:
@@ -275,7 +358,7 @@ def build_question_group(
                 {"id": "swelling", "label": "鼓包/变形", "value": "电池鼓包或外壳变形"},
                 {"id": "smoke", "label": "冒烟", "value": "冒烟"},
                 {"id": "burning_smell", "label": "烧焦味", "value": "烧焦味"},
-                {"id": "leak", "label": "漏液", "value": "漏液"},
+                {"id": "leak", "label": "进水/漏液", "value": "进水或漏液"},
                 {"id": "shock", "label": "触电/麻手", "value": "触电或麻手"},
             ],
             "text_placeholder": "补充其他安全异常（选填）",
@@ -329,7 +412,10 @@ def build_missing_field_question_group(
         "product_model": ("请输入产品型号", "例如：FlowBuds Pro"),
         "fault_symptom": ("请描述具体故障现象", "例如：左耳没有声音"),
         "fault_code": ("请输入故障码", "例如：E101"),
-        "ticket_id": ("请输入工单号", "例如：RF-T20261020-001"),
+        "ticket_id": (
+            "请输入维修工单号",
+            "例如：RF-T20261020-001；可在售后记录或通知消息中查看",
+        ),
     }
     prompt, placeholder = copy.get(field, (f"请补充{field}", "请输入"))
     return {
@@ -421,11 +507,15 @@ def advance_device_support_flow(
     text = (message or "").strip()
     flow = dict(state.get("support_flow") or {})
     active = is_active_support_flow(state)
-    if active and intent not in {"device_fault", "aftersales", "other", "query", "request", "greeting"}:
+    if active and intent not in {
+        "device_fault", "aftersales", "exchange_request", "repair_request",
+        "other", "query", "request", "greeting",
+    }:
         return None
     if not active:
         candidate = intent == "device_fault" or (
-            intent in {"aftersales", "other"} and bool(_GENERIC_FAILURE.search(text))
+            intent in {"aftersales", "other", "exchange_request", "repair_request"}
+            and bool(_GENERIC_FAILURE.search(text))
         )
         if not candidate:
             return None
@@ -448,11 +538,15 @@ def advance_device_support_flow(
             "product_model": product_model,
             "symptom_category": symptom,
             "symptom_detail": _first(entities.get("fault_symptom")),
+            "goal_intent": (
+                intent if intent in {"exchange_request", "repair_request"}
+                else "device_fault"
+            ),
             "started_request_id": request_id,
         }
         _set_stage(state, flow, "safety_check", request_id)
         return _clarification(
-            _safety_question(), "safety_check", "missing_safety_status",
+            _safety_question_with_acknowledgement(text), "safety_check", "missing_safety_status",
             request_id=request_id, category=flow.get("product_category"),
         )
 
@@ -486,7 +580,7 @@ def advance_device_support_flow(
             flow["safety_status"] = "uncertain"
             _set_stage(state, flow, "safety_check", request_id)
             return _clarification(
-                "可以先观察设备是否明显发烫、变形、冒烟、有烧焦味、漏液或麻手触电。\n\n"
+                "可以先观察设备是否明显发烫、变形、冒烟、有烧焦味、进水/漏液或麻手触电。\n\n"
                 "请选择：有 / 没有 / 仍不确定。",
                 "safety_check",
                 "safety_status_uncertain",
@@ -498,7 +592,7 @@ def advance_device_support_flow(
             flow["safety_status"] = "reported"
             _set_stage(state, flow, "safety_detail", request_id)
             return _clarification(
-                "请告诉我出现了哪一种情况：明显发烫、鼓包/变形、冒烟、烧焦味、漏液或触电；可以多选或直接描述。",
+                "请告诉我出现了哪一种情况：明显发烫、鼓包/变形、冒烟、烧焦味、进水/漏液或触电；可以多选或直接描述。",
                 "safety_detail",
                 "missing_safety_detail",
                 request_id=request_id,
@@ -517,7 +611,7 @@ def advance_device_support_flow(
         if detect_safety_risks(text):
             return None
         return _clarification(
-            "请描述具体安全异常，例如发烫、鼓包、冒烟、烧焦味、漏液或触电。",
+            "请描述具体安全异常，例如发烫、鼓包、冒烟、烧焦味、进水/漏液或触电。",
             "safety_detail",
             "missing_safety_detail",
             request_id=request_id,
@@ -556,6 +650,14 @@ def advance_device_support_flow(
                 _identity_question(category), "device_identity", "symptom_received_before_identity",
                 request_id=request_id, category=category,
             )
+        if not product_model and _UNKNOWN_DEVICE.search(text):
+            # 型号是提高诊断精度的可选信息，不应成为无限追问的阻塞项。
+            # 保留“未知”事实，后续只执行跨型号的低风险通用排查。
+            flow["device_identity_status"] = "unknown"
+            state.setdefault("facts", {})["device_identity_status"] = "unknown"
+            state.setdefault("task_progress", {})["continued_without_product_model"] = True
+            _set_stage(state, flow, "diagnosis_ready", request_id)
+            return None
         if not product_model and text and not _UNKNOWN_DEVICE.search(text):
             product_model = text[:80]
             _update_entity(state, "product_model", product_model, request_id)

@@ -70,7 +70,12 @@ class MemoryContext:
         if self.relevant_history:
             parts.append("[相关历史]\n" + "\n".join(f"- {self._clean(h)}" for h in self.relevant_history[:3]))
         if self.user_profile:
-            parts.append(f"[用户画像]\n{json.dumps(self.user_profile, ensure_ascii=True)}")
+            # 跨会话画像只传递稳定的交互偏好。产品、故障、工单等
+            # 任务实体只属于原会话，不得带入新会话成为当前事实。
+            preferences = self.user_profile.get("preferences")
+            if isinstance(preferences, list) and preferences:
+                profile_view = {"preferences": [self._clean(str(item)) for item in preferences[:8]]}
+                parts.append(f"[用户画像]\n{json.dumps(profile_view, ensure_ascii=True)}")
         if self.recent_messages:
             parts.append("[最近对话]")
             for m in self.recent_messages[-8:]:
@@ -243,14 +248,16 @@ class MemoryManager:
 
         text = self._safe_text("\n".join(f"{m.role.value}: {m.content}" for m in messages[-10:]))
         profile_ctx = json.dumps(current_profile, ensure_ascii=False) if current_profile else "{}"
-        prompt = f"""从以下对话和已有用户画像中提炼或更新用户偏好和关键实体，返回 JSON。
+        prompt = f"""从以下对话和已有用户画像中提炼或更新稳定的交互偏好，返回 JSON。
+只保留跨会话仍然有效的偏好，例如语言、回答详细度、偏好的服务渠道。
+不要保存产品、设备、故障现象、订单、工单或当前任务，这些只属于原会话。
 对话:
 {text}
 
 已有画像:
 {profile_ctx}
 
-返回格式: {{"preferences": ["..."], "entities": {{"产品": [], "问题类型": []}}}}"""
+返回格式: {{"preferences": ["..."]}}"""
         prompt = self._safe_text(prompt)
 
         try:

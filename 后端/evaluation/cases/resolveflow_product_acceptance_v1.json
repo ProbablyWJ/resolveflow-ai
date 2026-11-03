@@ -1,0 +1,83 @@
+{
+  "suite_version": "resolveflow-product-acceptance-v1.0",
+  "cases": [
+    {"case_id":"pa01_vague_earphone","category":"device_fault","turns":[{"message":"我耳机坏了","expected":{"intent":"device_fault","primary_agent":"intake","question_stage":"safety_check","question_type":"single_select","forbidden_tools":["run_device_diagnostic","create_service_ticket"],"max_response_chars":260,"max_latency_ms":5000}}]},
+    {"case_id":"pa02_audio_symptom","category":"device_fault","turns":[{"message":"我耳机左边突然没声音了","expected":{"intent":"device_fault","primary_agent":"intake","question_stage":"safety_check","question_type":"single_select","max_latency_ms":5000}}]},
+    {"case_id":"pa03_direct_heat_smell","category":"safety","turns":[{"message":"充电盒特别烫，还有一股焦味","expected":{"intent":"device_fault","primary_agent":"escalation","escalated":true,"question_present":false,"required_response_terms":["停止使用和充电"],"forbidden_tools":["run_device_diagnostic","create_service_ticket"],"max_latency_ms":5000}}]},
+    {"case_id":"pa04_negation_contrast","category":"safety","turns":[{"message":"没有鼓包，也没有漏液，但是已经有焦臭味","expected":{"intent":"device_fault","primary_agent":"escalation","escalated":true,"question_present":false,"required_response_terms":["停止使用和充电"],"max_latency_ms":5000}}]},
+    {"case_id":"pa05_uncertain_heat","category":"safety","turns":[{"message":"耳机好像有点热，我不确定这算不算异常","expected":{"intent":["device_fault","aftersales"],"primary_agent":"intake","question_stage":"safety_check","question_type":"single_select","max_latency_ms":5000}}]},
+    {"case_id":"pa06_vague_computer","category":"device_fault","turns":[{"message":"我的电脑坏了","expected":{"intent":"device_fault","primary_agent":"intake","question_stage":"safety_check","max_latency_ms":5000}}]},
+    {"case_id":"pa07_blue_screen","category":"device_fault","turns":[{"message":"我的笔记本一直蓝屏怎么办","expected":{"intent":"technical_crash","primary_agent":"diagnostic","question_present":false,"required_any_response_terms":["蓝屏","错误代码","错误码"],"forbidden_response_terms":["升级原因","当前判断"],"max_response_chars":1200,"max_latency_ms":30000}}]},
+    {"case_id":"pa08_exchange_vague","category":"exchange","turns":[{"message":"刚买三天就坏了，能直接换新吗","expected":{"intent":"exchange_request","primary_agent":"intake","question_stage":"safety_check","question_type":"single_select","forbidden_response_terms":["基础信息仍待核验"],"max_latency_ms":5000}}]},
+    {"case_id":"pa09_exchange_policy","category":"exchange","turns":[{"message":"刚拆封就无法开机，可以直接换一台吗","expected":{"intent":"exchange_request","primary_agent":"intake","question_stage":["safety_check","collect_order_id"],"forbidden_response_terms":["基础信息仍待核验"],"max_latency_ms":5000}}]},
+    {"case_id":"pa10_warranty","category":"warranty","turns":[{"message":"这副耳机还在保修期吗","expected":{"intent":"warranty_inquiry","primary_agent":"intake","question_stage":"collect_order_id","question_type":"text","required_response_terms":["订单号"],"max_latency_ms":5000}}]},
+    {"case_id":"pa11_repair","category":"repair","turns":[{"message":"我想申请官方维修","expected":{"intent":"repair_request","primary_agent":"intake","question_stage":"collect_order_id","question_type":"text","required_response_terms":["订单号"],"max_latency_ms":5000}}]},
+    {"case_id":"pa12_ticket_colloquial","category":"ticket","turns":[{"message":"我想查一下维修到哪了","expected":{"intent":"ticket_status","primary_agent":"intake","question_stage":"collect_ticket_id","question_type":"text","required_response_terms":["维修工单号"],"forbidden_response_terms":["订单号","序列号"],"max_latency_ms":5000}}]},
+    {"case_id":"pa13_ticket_exact","category":"ticket","turns":[{"message":"帮我查维修工单 RF-T20261020-001 的进度","expected":{"intent":"ticket_status","primary_agent":"resolution","question_present":false,"required_tools":["get_service_ticket"],"max_latency_ms":30000}}]},
+    {"case_id":"pa14_parts","category":"parts","turns":[{"message":"我想补一个耳帽，需要怎么申请","expected":{"intent":"parts_request","primary_agent":"intake","question_stage":"collect_serial_number","question_type":"text","required_response_terms":["序列号"],"max_latency_ms":5000}}]},
+    {"case_id":"pa15_quality_complaint","category":"complaint","turns":[{"message":"同一个故障修了三次还复发，我要登记质量投诉","expected":{"intent":"quality_complaint","primary_agent":"intake","question_stage":"collect_order_id","required_response_terms":["质量投诉","不会当作普通维修","订单号"],"max_latency_ms":5000}}]},
+    {"case_id":"pa16_human","category":"handoff","turns":[{"message":"我不想再跟机器人说了，直接转人工","expected":{"intent":"human_handoff","primary_agent":"escalation","escalated":true,"question_present":false,"required_response_terms":["人工"],"max_latency_ms":5000}}]},
+    {"case_id":"pa17_abandon","category":"exit","turns":[{"message":"算了，我不修了","expected":{"intent":"aftersales","primary_agent":"intake","question_present":false,"required_response_terms":["处理已结束","没有创建工单"],"forbidden_tools":["create_service_ticket"],"max_latency_ms":5000}}]},
+    {"case_id":"pa18_angry_vague","category":"complaint","turns":[{"message":"你们这破东西怎么又坏了","expected":{"intent":["aftersales","device_fault"],"primary_agent":"intake","question_stage":"safety_check","required_response_terms":["抱歉","影响使用"],"max_latency_ms":5000}}]},
+    {"case_id":"pa19_greeting","category":"general","turns":[{"message":"你好，在吗","expected":{"intent":"greeting","primary_agent":"intake","question_present":false,"max_response_chars":300,"max_latency_ms":30000}}]},
+    {"case_id":"pa20_unknown_goal","category":"clarification","turns":[{"message":"这个要怎么办啊","expected":{"primary_agent":"intake","question_present":true,"max_response_chars":500,"max_latency_ms":30000}}]},
+
+    {"case_id":"pa21_progressive_audio","category":"multi_turn","turns":[
+      {"message":"我耳机坏了","expected":{"intent":"device_fault","primary_agent":"intake","question_stage":"safety_check","max_latency_ms":5000}},
+      {"message":"没有","expected":{"intent":"device_fault","primary_agent":"intake","question_stage":"symptom","question_type":"multi_select","max_latency_ms":5000}},
+      {"message":"左耳没声音","expected":{"intent":"device_fault","primary_agent":"intake","question_stage":"device_identity","question_type":"text","max_latency_ms":5000}}
+    ]},
+    {"case_id":"pa22_progressive_safety","category":"multi_turn_safety","turns":[
+      {"message":"我耳机坏了","expected":{"question_stage":"safety_check","max_latency_ms":5000}},
+      {"message":"有","expected":{"primary_agent":"intake","question_stage":"safety_detail","question_type":"multi_select","max_latency_ms":5000}},
+      {"message":"有一股焦味","expected":{"intent":"device_fault","primary_agent":"escalation","escalated":true,"question_present":false,"required_response_terms":["停止使用和充电"],"max_latency_ms":5000}}
+    ]},
+    {"case_id":"pa23_exchange_progressive","category":"multi_turn_exchange","turns":[
+      {"message":"刚买三天就坏了，想换新","expected":{"intent":"exchange_request","question_stage":"safety_check","max_latency_ms":5000}},
+      {"message":"没有","expected":{"intent":"exchange_request","question_stage":"symptom","max_latency_ms":5000}},
+      {"message":"完全开不了机","expected":{"intent":"exchange_request","question_stage":"device_identity","max_latency_ms":5000}}
+    ]},
+    {"case_id":"pa24_back_question","category":"multi_turn_navigation","turns":[
+      {"message":"我耳机坏了","expected":{"question_stage":"safety_check","max_latency_ms":5000}},
+      {"message":"没有","expected":{"question_stage":"symptom","max_latency_ms":5000}},
+      {"message":"左耳没声音","expected":{"question_stage":"device_identity","max_latency_ms":5000}},
+      {"message":"返回上一问题","expected":{"question_stage":"symptom","max_latency_ms":5000}}
+    ]},
+    {"case_id":"pa25_task_switch_safety","category":"multi_turn_switch","turns":[
+      {"message":"查询维修工单 RF-T20261020-001 的进度","expected":{"intent":"ticket_status","primary_agent":"resolution","required_tools":["get_service_ticket"],"max_latency_ms":30000}},
+      {"message":"另外我的耳机充电盒特别烫，还有焦味","expected":{"intent":"device_fault","primary_agent":"escalation","escalated":true,"question_present":false,"required_response_terms":["停止使用和充电"],"max_latency_ms":5000}}
+    ]},
+    {"case_id":"pa26_active_abandon","category":"multi_turn_exit","turns":[
+      {"message":"我耳机坏了","expected":{"question_stage":"safety_check","max_latency_ms":5000}},
+      {"message":"算了，我不修了","expected":{"intent":"aftersales","primary_agent":"intake","question_present":false,"required_response_terms":["处理已结束"],"max_latency_ms":5000}}
+    ]},
+    {"case_id":"pa27_safety_uncertain","category":"multi_turn_safety","turns":[
+      {"message":"耳机连接不上","expected":{"question_stage":"safety_check","max_latency_ms":5000}},
+      {"message":"不确定","expected":{"question_stage":"safety_check","required_any_response_terms":["观察","不确定"],"max_latency_ms":5000}}
+    ]},
+    {"case_id":"pa28_unknown_model","category":"multi_turn_unknown","turns":[
+      {"message":"耳机没声音","expected":{"question_stage":"safety_check","max_latency_ms":5000}},
+      {"message":"没有","expected":{"question_stage":"device_identity","max_latency_ms":5000}},
+      {"message":"不知道型号","expected":{"primary_agent":"diagnostic","question_present":false,"required_tools":["run_device_diagnostic"],"forbidden_response_terms":["product_model","当前判断","请告诉我这台耳机的品牌和型号"],"max_latency_ms":30000}}
+    ]},
+    {"case_id":"pa29_ticket_no_id","category":"multi_turn_ticket","turns":[
+      {"message":"查一下我的维修进度","expected":{"intent":"ticket_status","question_stage":"collect_ticket_id","required_response_terms":["维修工单号"],"max_latency_ms":5000}},
+      {"message":"我找不到工单号","expected":{"intent":"ticket_status","primary_agent":["intake","escalation"],"required_any_response_terms":["找不到","售后记录","人工","订单号"],"forbidden_response_terms":["基础信息仍待核验"],"max_latency_ms":30000}}
+    ]},
+    {"case_id":"pa30_negated_risks_then_symptom","category":"multi_turn_negation","turns":[
+      {"message":"FlowBuds Pro 左耳没声音，没有发烫、鼓包、冒烟、烧焦味、漏液或触电","expected":{"intent":"device_fault","primary_agent":"diagnostic","escalated":false,"question_present":false,"required_tools":["run_device_diagnostic"],"forbidden_response_terms":["停止使用和充电"],"max_latency_ms":30000}}
+    ]},
+    {"case_id":"pa31_part_not_whole_device","category":"parts","turns":[
+      {"message":"我只想换一个充电盒，不修整机","expected":{"intent":"parts_request","primary_agent":"intake","question_stage":"collect_serial_number","question_type":"text","required_response_terms":["配件","序列号"],"max_latency_ms":5000}}
+    ]},
+    {"case_id":"pa32_ticket_location","category":"ticket","turns":[
+      {"message":"维修工单在哪里看","expected":{"intent":"ticket_status","primary_agent":"intake","question_stage":"collect_ticket_id","required_response_terms":["维修工单号","售后记录"],"forbidden_response_terms":["订单号"],"max_latency_ms":5000}}
+    ]},
+    {"case_id":"pa33_decline_handoff","category":"self_service","turns":[
+      {"message":"不要转人工，我想先自己排查","expected":{"intent":"aftersales","primary_agent":"intake","escalated":false,"question_stage":"clarify_self_service_issue","required_response_terms":["先不转人工","设备"],"max_latency_ms":5000}}
+    ]},
+    {"case_id":"pa34_water_ingress","category":"safety","turns":[
+      {"message":"耳机掉水里了，现在还能继续用吗","expected":{"intent":"device_fault","primary_agent":"escalation","escalated":true,"question_present":false,"required_response_terms":["停止使用和充电"],"forbidden_tools":["run_device_diagnostic","create_service_ticket"],"max_latency_ms":5000}}
+    ]}
+  ]
+}
